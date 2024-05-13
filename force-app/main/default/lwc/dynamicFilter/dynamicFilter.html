@@ -1,0 +1,110 @@
+<template>
+  <div class="main-container">
+    <template for:each={filters} for:item="filter" for:index="index">
+      <div key={filter.field} class="rules-container">
+        <div class="main-label-container">
+            <h3>Filter {filter.sequence}</h3>
+          </div>
+        <div class="main-combobox-container">
+          <lightning-combobox
+            class="main-combobox"
+            label="Field"
+            value={filter.field}
+            options={fieldOptions}
+            onchange={handleFieldChange}
+            data-index={index}
+            dropdown-alignment="auto"
+          ></lightning-combobox>
+        </div>
+        <div class="text-input-dropdown dynamic-combobox-container">
+          <lightning-combobox
+            class="dynamic-combobox"
+            label="Operator"
+            value={filter.operator}
+            options={filter.operatorOptions}
+            onchange={handleOperatorChange}
+            data-index={index}
+            dropdown-alignment="auto"
+          ></lightning-combobox>
+        </div>
+
+        <div class="text-input-container">
+            <lightning-input
+                lwc:if={filter.isType}  
+                type={filter.fieldType} 
+                variant="standard" 
+                formatter={filter.formatter} 
+                value={filter.value} 
+                label="Value" 
+                onchange={handleValueChange}
+                data-index={index}>
+            </lightning-input>
+
+          <div
+            class="rule-value-combobox multi-select"
+            lwc:if={filter.showPicklistInput}
+          >
+            <c-multi-select-combobox
+              index={index}
+              onselect={handleMultiSelect}
+              multi-select="true"
+              options={filter.options}
+              selected-values={filter.selectedValues}
+            >
+            </c-multi-select-combobox>
+          </div>
+
+          <lightning-combobox
+            lwc:if={filter.showBooleanInput}
+            class="rule-value-combobox"
+            label="Value"
+            value={filter.value}
+            options={filter.options}
+            onchange={handleValueChange}
+            data-index={index}
+            variant="standard"
+            dropdown-alignment="auto"
+          ></lightning-combobox>
+        </div>
+
+        <div class="text-input-dropdown dynamic-combobox-container condition">
+          <lightning-combobox
+            class="dynamic-combobox"
+            label="Condition"
+            value={filter.condition}
+            options={conditionOptions}
+            onchange={handleConditionChange}
+            data-index={index}
+            dropdown-alignment="auto"
+          ></lightning-combobox>
+        </div>
+
+        <div class="remove-rules icon-wrapper">
+          <lightning-icon
+            class={removeIcon}
+            icon-name="utility:close"
+            alternative-text="removeRule"
+            onclick={removeFilter}
+            data-index={index}
+          ></lightning-icon>
+        </div>
+      </div>
+    </template>
+
+    <div class="add-rules">
+      <div class="main-label-container"></div>
+      <lightning-button
+        variant="base"
+        label="+ Add Filter"
+        title="+ Add Filter"
+        onclick={addFilter}
+        class="add-button slds-m-left_x-small"
+      ></lightning-button>
+      <!--            <lightning-button label="Validate Query" onclick={generateSOQLQuery}></lightning-button>-->
+    </div>
+
+    <div class="soql-query">
+        <lightning-button variant="brand" label="Fetch Results" onclick={generateSOQLQuery}></lightning-button>
+    </div>
+  </div>
+</template>
