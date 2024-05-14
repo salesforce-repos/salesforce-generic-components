@@ -1,5 +1,164 @@
 <template>
+  <template if:true={errorMessage}>
+    <div
+      class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme--error"
+      role="alert"
+    >
+      {errorMessage}
+    </div>
+  </template>
+
   <lightning-card
+    title={label}
+    if:false={errorMessage}
+    class="slds-p-around--none"
+  >
+    <div class="slds-grid slds-gutters slds-p-left--small slds-p-right--small">
+      <div class="slds-col slds-size--3-of-12">
+        <lightning-combobox
+          lwc:if={objectList.length}
+          class="slds-p-left--none"
+          name="objectType"
+          label="Object Type"
+          placeholder="Select Object Type"
+          value={selectedObject}
+          options={objectList}
+          onchange={handleObjectChange}
+          dropdown-alignment="auto"
+          variant="label-stacked"
+        ></lightning-combobox>
+
+        <div class="exampleHolder">
+          <lightning-spinner
+            lwc:if={isLoading}
+            alternative-text="Loading"
+          ></lightning-spinner>
+        </div>
+
+        <div class="container" lwc:if={fieldDetails.length}>
+          <div class="header list-container">
+            <div class="header-content">
+              <h2>Select Fields</h2>
+              <div class="buttons-container">
+                <lightning-button
+                  label="+ Add All"
+                  onclick={addAllFields}
+                  variant="base"
+                  class="add-button slds-m-left_x-small"
+                ></lightning-button>
+                <lightning-button
+                  label="- Remove All"
+                  onclick={removeAllFields}
+                  variant="base"
+                  class="add-button slds-m-left_x-small"
+                ></lightning-button>
+              </div>
+            </div>
+          </div>
+
+          <div class="list-container">
+            <template for:each={fieldDetails} for:item="item" for:index="index">
+              <div key={item.value} class="item">
+                <lightning-input
+                  type="checkbox"
+                  label={item.label}
+                  checked={item.selected}
+                  onchange={handleFieldChange}
+                  data-index={index}
+                ></lightning-input>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class={selectedObjectClass}
+        style="position: relative; padding-left: 100px"
+      >
+        <div style={conditionBuilderStyle}>
+          <span class="slds-p-left--xx-small generated-class">
+            {labels.generatedQuery}
+          </span>
+          <div>
+            <c-dynamic-filter
+              object-api-name={selectedObject}
+              field-options={fieldOptions}
+              field-details={fieldDetails}
+              selected-fields={selectedFields}
+              onfetchresults={fetchResults}
+              object-info={objectInfo}
+            ></c-dynamic-filter>
+          </div>
+
+          <div class="slds-grid slds-wrap slds-p-left--xx-small">
+            <div class="slds-col slds-size--3-of-12 slds-p-around_none">
+              <lightning-input
+                name="limit"
+                type="Number"
+                label="Limit"
+                value={limit}
+                max="50000"
+                disabled={isRHSDisabled}
+                onchange={handleLimitChanged}
+              >
+              </lightning-input>
+            </div>
+            <div class="slds-col slds-size--5-of-12 slds-p-around_none">
+              <lightning-combobox
+                name="orderByField"
+                label="Order By"
+                placeholder=""
+                variant="label-stacked"
+                value={orderByField}
+                disabled={isRHSDisabled}
+                options={fieldOptionsWithNone}
+                onchange={handleOrderByChanged}
+              ></lightning-combobox>
+            </div>
+            <div class="slds-col slds-size--3-of-12 slds-p-around_none">
+              <lightning-combobox
+                name="orderByDirection"
+                label="Direction"
+                placeholder=""
+                variant="label-stacked"
+                value={orderByDirection}
+                options={orderByDirections}
+                disabled={isRHSDisabled}
+                onchange={handleDirectionChanged}
+              ></lightning-combobox>
+            </div>
+          </div>
+        </div>
+
+        <div class="btn-fetch" style={conditionBuilderStyle}>
+          <lightning-button
+            label="Fetch Data"
+            title="Fetch Data"
+            variant="brand"
+            onclick={handleFetchResults}
+          ></lightning-button>
+        </div>
+
+        <div
+          class="slds-grid slds-wrap slds-p-top_medium slds-p-bottom_medium slds-p-left--xx-small"
+        >
+          <div
+            class="slds-col slds-size_1-of-1 slds-border_top slds-border_right slds-border_bottom slds-border_left"
+            lwc:if={showDatatable}
+          >
+            <c-dynamic-table
+              object-data={queryData}
+              selected-columns={selectedColumnsMap}
+            >
+            </c-dynamic-table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </lightning-card>
+
+  <!--<lightning-card
     variant="Narrow"
     title="Query Builder"
     icon-name="standard:account"
@@ -11,7 +170,7 @@
             label="Search Object"
             options={objectList}
             onselect={handleObjectChange}
-            ></c-searchable-combobox>
+          ></c-searchable-combobox>
         </div>
         <div class="slds-col slds-size_4-of-6" lwc:if={fieldOptions.length}>
           <lightning-dual-listbox
@@ -27,23 +186,28 @@
 
       <div class="slds-grid slds-gutters slds-p-around_medium">
         <div class="slds-col slds-size_1-of-1" lwc:if={fieldOptions.length}>
-          <c-dynamic-filter object-api-name={selectedObject}
-          field-options={fieldOptions}
-          field-details={fieldDetails}
-          selected-fields = {selectedFields}
-          onfetchresults={fetchResults}></c-dynamic-filter>
+          <c-dynamic-filter
+            object-api-name={selectedObject}
+            field-options={fieldOptions}
+            field-details={fieldDetails}
+            selected-fields={selectedFields}
+            onfetchresults={fetchResults}
+          ></c-dynamic-filter>
         </div>
       </div>
 
       <div class="slds-grid slds-gutters slds-p-around_medium">
-        <div class="slds-col slds-size_1-of-1" lwc:if={queryData.length}>
-            <c-dynamic-table
+        <div class="slds-col slds-size_1-of-1" lwc:if={showDatatable}>
+          <c-dynamic-table
             object-data={queryData}
-            selected-columns={selectedColumnsMap} 
-            >
-            </c-dynamic-table>
+            selected-columns={selectedColumnsMap}
+          >
+          </c-dynamic-table>
+         
+
+          
         </div>
       </div>
     </div>
-  </lightning-card>
+  </lightning-card>-->
 </template>

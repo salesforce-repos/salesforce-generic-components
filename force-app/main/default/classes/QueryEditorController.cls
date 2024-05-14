@@ -98,6 +98,30 @@ public class QueryEditorController {
         
     }
     
+    @AuraEnabled(cacheable = true)
+    public static List<PicklistOption> getOptionsForSelectedPicklistField(string selectedObjectName, string selectedField){
+        List<PicklistOption> picklistOptions = new List<PicklistOption>();
+        try {
+            System.debug('selectedObjectName '+selectedObjectName);
+            System.debug('selectedField '+selectedField);
+            Map<String,String> options = new  Map<String,String>();
+            
+            Map<String, Schema.SObjectField> mapFields = Schema.getGlobalDescribe().get(selectedObjectName).getDescribe().fields.getMap();
+            Schema.DescribeFieldResult pickFieldResult = mapFields.get(selectedField).getDescribe();   
+            List<Schema.PicklistEntry> picklistFields1 = pickFieldResult.getPicklistValues();
+                for( Schema.PicklistEntry pickListFields2 : picklistFields1)
+                {
+                     PicklistOption option = new PicklistOption();
+                    option.label = pickListFields2.getLabel();
+                    option.value = pickListFields2.getValue();
+                    picklistOptions.add(option);
+                }       
+            return picklistOptions;
+        } catch (Exception e) {
+            throw new AuraHandledException('Unable to fetch data');
+        }
+    }
+    
     public class FieldInfoWrapper {
         @AuraEnabled public String name;
         @AuraEnabled public String label;
