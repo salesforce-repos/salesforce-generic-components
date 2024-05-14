@@ -59,16 +59,16 @@ export default class DynamicFilter extends LightningElement {
       value: " LIKE ",
       types: "String,Url,Email,Reference,Phone,NestedField"
     },
-    {
-      label: "NOT IN",
-      value: " NOT IN ",
-      types: "String,Url,Email,Reference,Phone,Currency,,Address,NestedField"
+    /*{
+      label: "NOT LIKE",
+      value: " NOT LIKE ",
+      types: "String,Url,Email,Reference,Phone,Currency,Address,NestedField"
     },
     {
       label: "IN",
       value: " IN ",
       types: "String,Url,Email,Phone,Currency,Address,NestedField"
-    }
+    }*/
   ];
 
   fieldTypeSettings = {
@@ -457,9 +457,10 @@ export default class DynamicFilter extends LightningElement {
   }
 
   formatClause(field, operator, value, type) {
+    console.log("@@ operator " + type);
     let clause = `  `;
     if (type === "text") {
-      if (operator === "LIKE" || operator === "NOT LIKE") {
+      if (operator.trim() === "LIKE" || operator.trim() === "NOT LIKE") {
         return `'%${value}%'`;
       } else {
         return `'${value}'`;
