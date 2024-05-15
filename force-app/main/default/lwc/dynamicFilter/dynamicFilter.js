@@ -1,14 +1,14 @@
 import { LightningElement, api, wire, track } from "lwc";
-import { getPicklistValues } from "lightning/uiObjectInfoApi";
-import getPickListvaluesByFieldName from "@salesforce/apex/QueryEditorController.getOptionsForSelectedPicklistField";
 
+import getPickListvaluesByFieldName from "@salesforce/apex/QueryEditorController.getOptionsForSelectedPicklistField";
+import { ShowToastEvent } from "lightning/platformShowToastEvent";
 export default class DynamicFilter extends LightningElement {
   @api objectApiName; // Input property to accept custom object API name
   @api fieldOptions; // Input property to accept fields information
   @api fieldDetails;
   @api selectedFields;
-  @api objectInfo;
 
+  error = false;
   @track currentPicklistField;
   currentIndex;
 
@@ -19,52 +19,52 @@ export default class DynamicFilter extends LightningElement {
   ];
 
   selectedLogicOption = "AND";
-  customLogic;
+  customLogic = "";
 
   operations = [
     {
-      label: "equals",
+      label: "Equals",
       value: " = ",
       types:
         "String,Picklist,Url,Email,TextArea,Reference,Phone,Date,DateTime,Currency,Double,Boolean,Int,Address,NestedField"
     },
     {
-      label: "not equals",
+      label: "Not Equals",
       value: " != ",
       types:
         "String,Picklist,Url,Email,TextArea,Reference,Phone,Date,DateTime,Currency,Double,Boolean,Int,Address,NestedField"
     },
     {
-      label: "less than",
+      label: "Less Than",
       value: " < ",
-      types: "Date,DateTime,Currency,Double,Int,Address,NestedField"
+      types: "Date,DateTime,Currency,Double,Int,NestedField"
     },
     {
-      label: "greater than",
+      label: "Greater Than",
       value: " > ",
-      types: "Date,DateTime,Currency,Double,Int,Address,NestedField"
+      types: "Date,DateTime,Currency,Double,Int,NestedField"
     },
     {
-      label: "less than or equals",
+      label: "Less Than Or Equals",
       value: " <= ",
-      types: "Date,DateTime,Currency,Double,Int,Address,NestedField"
+      types: "Date,DateTime,Currency,Double,Int,NestedField"
     },
     {
-      label: "greater than or equals",
+      label: "Greater Than Or Equals",
       value: " >= ",
-      types: "Phone,Date,DateTime,Currency,Double,Int,Address,NestedField"
+      types: "Date,DateTime,Currency,Double,Int,NestedField"
     },
     {
       label: "LIKE",
       value: " LIKE ",
-      types: "String,Url,Email,Reference,Phone,NestedField"
-    },
-    /*{
-      label: "NOT LIKE",
-      value: " NOT LIKE ",
-      types: "String,Url,Email,Reference,Phone,Currency,Address,NestedField"
+      types: "String,Url,Email,Reference,Phone,NestedField,Address"
     },
     {
+      label: "NOT LIKE",
+      value: " NOT LIKE ",
+      types: "String,Url,Email,Reference,Phone,Address,NestedField"
+    }
+    /*{
       label: "IN",
       value: " IN ",
       types: "String,Url,Email,Phone,Currency,Address,NestedField"
@@ -163,62 +163,10 @@ export default class DynamicFilter extends LightningElement {
     }
   ]; // Array to store filter objects { field, operator, value, condition }
   soqlQuery;
-  conditionOptions = [
-    { label: "AND", value: "AND" },
-    { label: "OR", value: "OR" }
-  ];
-
-  defaultOperators = [
-    { label: "Equals", value: "=" },
-    { label: "Not Equals", value: "!=" }
-  ];
-
-  piclistOperators = [
-    { label: "Equals", value: "IN" },
-    { label: "Not Equals", value: "NOT IN" }
-  ];
 
   booleanOptions = [
     { label: "True", value: "true" },
     { label: "False", value: "false" }
-  ];
-
-  numberOperatorOptions = [
-    { label: "Equals", value: "=" },
-    { label: "Not Equals", value: "!=" },
-    { label: "Greater Than", value: ">" },
-    { label: "Less Than", value: "<" },
-    { label: "Greater Than or Equal To", value: ">=" },
-    { label: "Less Than or Equal To", value: "<=" }
-    // Add more number operator options as needed
-  ];
-
-  stringOperatorOptions = [
-    { label: "Equals", value: "=" },
-    { label: "Not Equals", value: "!=" },
-    { label: "LIKE", value: "LIKE" },
-    { label: "NOT LIKE", value: "NOT LIKE" }
-    // Add more string operator options as needed
-  ];
-
-  dateOperatorOptions = [
-    { label: "Equals", value: "=" },
-    { label: "Not Equals", value: "!=" },
-    { label: "Greater Than", value: ">" },
-    { label: "Less Than", value: "<" },
-    { label: "Greater Than or Equal To", value: ">=" },
-    { label: "Less Than or Equal To", value: "<=" }
-    // Add more date operator options as needed
-  ];
-
-  dateTimeOperatorOptions = [
-    { label: "Equals", value: "=" },
-    { label: "Not Equals", value: "!=" },
-    { label: "Greater Than", value: ">" },
-    { label: "Less Than", value: "<" },
-    { label: "Greater Than or Equal To", value: ">=" },
-    { label: "Less Than or Equal To", value: "<=" }
-    // Add more datetime operator options as needed
   ];
 
   async getPicklistValuesForSelectedPicklistField() {
@@ -230,20 +178,11 @@ export default class DynamicFilter extends LightningElement {
         if (result) {
           this.filters[this.currentIndex].options = result;
           this.filters[this.currentIndex].valueDisabled = false;
-          console.log(
-            "@@ result " +
-              JSON.stringify(this.filters[this.currentIndex].options)
-          );
         }
       })
       .catch((error) => {
         console.error("Error in getting pickist values " + error);
       });
-  }
-
-  connectedCallback() {
-    // Initialize with one empty filter object
-    //this.addFilter();
   }
 
   get isCustomLogic() {
@@ -287,13 +226,11 @@ export default class DynamicFilter extends LightningElement {
 
   removeFilter(event) {
     let index = event.currentTarget.dataset.index;
-    // this.filters.splice(index, 1);
-
     if (this.filters.length === 1) {
       this.clearFilterData(0);
+      return;
     }
 
-    //let ruleId = event.target.dataset.id;
     let defaultFilters = JSON.parse(JSON.stringify(this.filters));
     if (defaultFilters.length > 1) {
       defaultFilters.splice(index, 1);
@@ -315,7 +252,6 @@ export default class DynamicFilter extends LightningElement {
       (field) => field.value === value
     );
 
-    console.log("@@ fieldDetail " + JSON.stringify(fieldDetail));
     if (fieldDetail) {
       try {
         this.filters[index].fieldType =
@@ -340,8 +276,6 @@ export default class DynamicFilter extends LightningElement {
             this.currentIndex = index;
             this.currentPicklistField = this.filters[index].field;
             this.getPicklistValuesForSelectedPicklistField();
-            console.log("@@ current " + this.currentPicklistField);
-            console.log("@ obj in dynamic " + JSON.stringify(this.objectInfo));
           }
           //this.filters[index].options = fieldDetail.picklistOptions;
         } else {
@@ -360,7 +294,6 @@ export default class DynamicFilter extends LightningElement {
         console.error(err);
       }
     }
-    //this.checkDataType(fieldDetail, index);
   }
 
   handleOperatorChange(event) {
@@ -380,84 +313,82 @@ export default class DynamicFilter extends LightningElement {
 
   @api
   generateSOQLQuery() {
-    console.log("@@ called");
+    if (this.error) {
+      const evt = new ShowToastEvent({
+        title: "Error",
+        message: "Fix all the errors.",
+        variant: "error",
+        mode: "dismissable"
+      });
+      this.dispatchEvent(evt);
+      return;
+    }
+
     try {
       let showWhere = false;
-      //let soql =
-      //"SELECT Id, " + this.selectedFields + " FROM " + this.objectApiName + " ";
       let soqlWhere = "";
-      if (!this.isCustomLogic) {
-        if (this.filters && this.filters.length > 0) {
-          //showWhere = true;
-          //oql += `WHERE `;
-        }
-        this.filters.forEach((filter, index) => {
-          if (index > 0) {
-            soqlWhere += ` ${this.selectedLogicOption} `;
-          }
-          if (
-            filter.field &&
-            filter.operator &&
-            (filter.value || filter.selectedValues.length > 0)
-          ) {
-            if (index === 0) {
+      let completeConditions = this.filters.filter(
+        (curCondition) => curCondition.field
+      );
+      if (completeConditions && completeConditions.length) {
+        const All_Combobox_Valid = [
+          ...this.template.querySelectorAll("lightning-combobox")
+        ].reduce((validSoFar, input_Field_Reference) => {
+          input_Field_Reference.reportValidity();
+          return validSoFar && input_Field_Reference.checkValidity();
+        }, true);
+
+        if (All_Combobox_Valid) {
+          soqlWhere += " ";
+          if (!this.isCustomLogic) {
+            showWhere = true;
+            soqlWhere += completeConditions
+              .map((curCompleteCondition) => {
+                return this.buildCondition(curCompleteCondition);
+              })
+              .join(" " + this.selectedLogicOption + " ");
+
+            this.fireEvent(soqlWhere, showWhere);
+          } else {
+            if (this.isValid()) {
               showWhere = true;
-            }
-
-            if (filter.showPicklistInput) {
-              const values = filter.selectedValues.join("', '");
-              let operator = filter.operator === " = " ? "IN" : "NOT IN";
-
-              soqlWhere += `${filter.field} ${operator} ('${values}')`;
-            } else if (filter.fieldType === "text") {
-              soqlWhere += `${filter.field} ${filter.operator} ${this.formatClause(
-                filter.field,
-                filter.operator,
-                filter.value,
-                "text"
-              )}`;
-            } else if (filter.showBooleanInput) {
-              const booleanValue = filter.value === "true" ? true : false;
-              soqlWhere += `${filter.field} ${filter.operator} ${booleanValue}`;
-            } else {
-              soqlWhere += `${filter.field} ${filter.operator} ${filter.value}`;
+              let customLogicLocal = this.buildCustomLogic(this.customLogic);
+              if (customLogicLocal) {
+                for (let i = 0; i < completeConditions.length; i++) {
+                  const regex = new RegExp("\\$" + (i + 1) + "_", "gi");
+                  customLogicLocal = customLogicLocal.replace(
+                    regex,
+                    this.buildCondition(completeConditions[i])
+                  );
+                }
+              }
+              soqlWhere += customLogicLocal ? customLogicLocal : "";
+              this.fireEvent(soqlWhere, showWhere);
             }
           }
-        });
-        this.soqlQuery = soqlWhere;
-
-        // Check if there is anything after "WHERE"
-        /*let whereIndex = this.soqlQuery.indexOf("WHERE ");
-        if (
-          whereIndex !== -1 &&
-          whereIndex + "WHERE ".length !== this.soqlQuery.length
-        ) {
-          // If there is something after "WHERE", do nothing
-        } else {
-          // If there is nothing after "WHERE", remove "WHERE" from the string
-          this.soqlQuery = this.soqlQuery.replace(" WHERE", "");
-        }*/
-
-        console.log("@@ before event");
-
-        this.dispatchEvent(
-          new CustomEvent("fetchresults", {
-            detail: {
-              payload: {
-                whereClaue: soqlWhere,
-                showWhere: showWhere
-              }
-            }
-          })
-        );
+        }
+      } else {
+        this.fireEvent(soqlWhere, showWhere);
       }
     } catch (err) {
       console.error(err);
     }
   }
 
+  fireEvent(soqlWhere, showWhere) {
+    this.dispatchEvent(
+      new CustomEvent("fetchresults", {
+        detail: {
+          payload: {
+            whereClaue: soqlWhere,
+            showWhere: showWhere
+          }
+        }
+      })
+    );
+  }
+
   formatClause(field, operator, value, type) {
-    console.log("@@ operator " + type);
     let clause = `  `;
     if (type === "text") {
       if (operator.trim() === "LIKE" || operator.trim() === "NOT LIKE") {
@@ -468,49 +399,6 @@ export default class DynamicFilter extends LightningElement {
     }
 
     return `'${value}'`;
-  }
-
-  checkDataType(fieldDetail, index) {
-    let fieldType = fieldDetail.dataType;
-    if (
-      fieldType === "ID" ||
-      fieldType === "REFERENCE" ||
-      fieldType === "STRING" ||
-      fieldType === "URL"
-    ) {
-      this.filters[index].operatorOptions = this.stringOperatorOptions;
-      this.filters[index].isType = true;
-      this.filters[index].fieldType = "text";
-    } else if (fieldType === "BOOLEAN") {
-      this.filters[index].showBooleanInput = true;
-      this.filters[index].options = [...this.booleanOptions];
-      this.filters[index].operatorOptions = this.defaultOperators;
-      this.filters[index].isType = false;
-    } else if (fieldType === "PICKLIST") {
-      this.filters[index].showPicklistInput = true;
-      this.filters[index].options = [...fieldDetail.picklistOptions];
-      this.filters[index].operatorOptions = this.piclistOperators;
-      this.filters[index].isType = false;
-    } else if (fieldType === "DOUBLE" || fieldType === "INTEGER") {
-      this.filters[index].operatorOptions = this.numberOperatorOptions;
-      this.filters[index].isType = true;
-      this.filters[index].fieldType = "number";
-    } else if (fieldType === "PHONE") {
-      this.filters[index].operatorOptions = this.defaultOperators;
-    } else if (fieldType === "CURRENCY") {
-      this.filters[index].operatorOptions = this.numberOperatorOptions;
-      this.filters[index].isType = true;
-      this.filters[index].fieldType = "number";
-      this.filters[index].formatter = "currency";
-    } else if (fieldType === "DATETIME") {
-      this.filters[index].operatorOptions = this.dateOperatorOptions;
-      this.filters[index].isType = true;
-      this.filters[index].fieldType = "datetime";
-    } else if (fieldType === "DATE") {
-      this.filters[index].operatorOptions = this.dateOperatorOptions;
-      this.filters[index].isType = true;
-      this.filters[index].fieldType = "date";
-    }
   }
 
   handleMultiSelect(event) {
@@ -526,5 +414,138 @@ export default class DynamicFilter extends LightningElement {
 
   handleCustomLogicChange(event) {
     this.customLogic = event.detail.value;
+  }
+
+  handleValidateBrackets(event) {
+    const customLogicInput = this.template.querySelector(".customLogic");
+
+    let isValidBracket = false;
+
+    if (this.customLogic !== "") {
+      isValidBracket = this.validateBrackets(this.customLogic);
+    }
+
+    this.error = !isValidBracket;
+    customLogicInput.setCustomValidity(this.error ? "Brackets Mis-Match" : "");
+    customLogicInput.reportValidity();
+  }
+
+  validateBrackets(str) {
+    try {
+      const stack = [];
+
+      for (let i = 0; i < str.length; i++) {
+        const char = str[i];
+
+        if (char === "(") {
+          stack.push(char);
+        } else if (char === ")") {
+          if (stack.length === 0 || stack[stack.length - 1] !== "(") {
+            return false;
+          }
+          stack.pop();
+        }
+      }
+
+      return stack.length === 0;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  buildCustomLogic(customLogic) {
+    if (customLogic) {
+      const matcher = new RegExp("\\d+", "gi");
+      let matched = customLogic.match(matcher);
+      if (matched) {
+        matched.forEach((curMatch) => {
+          customLogic = customLogic.replace(curMatch, "$" + curMatch + "_");
+        });
+      }
+    }
+    return customLogic;
+  }
+
+  buildCondition(filter) {
+    let soqlWhere = " ";
+
+    let value = filter.value !== "" ? filter.value : "''";
+
+    if (filter.showPicklistInput) {
+      if (filter.selectedValues.length === 0) {
+        soqlWhere += `${filter.field} ${filter.operator} ''`;
+      } else {
+        const values = filter.selectedValues.join("', '");
+        let operator = filter.operator === " = " ? "IN" : "NOT IN";
+        soqlWhere += `${filter.field} ${operator} ('${values}')`;
+      }
+    } else if (filter.fieldType === "text") {
+      soqlWhere +=
+        filter.operator.trim() === "NOT LIKE"
+          ? `(NOT ${filter.field} LIKE  ${this.formatClause(
+              filter.field,
+              filter.operator,
+              filter.value,
+              "text"
+            )})`
+          : `${filter.field} ${filter.operator} ${this.formatClause(
+              filter.field,
+              filter.operator,
+              filter.value,
+              "text"
+            )}`;
+    } else if (filter.showBooleanInput) {
+      const booleanValue = filter.value === "true" ? true : false;
+      soqlWhere += `${filter.field} ${filter.operator} ${booleanValue}`;
+    } else {
+      soqlWhere += `${filter.field} ${filter.operator} ${value}`;
+    }
+
+    return soqlWhere;
+  }
+
+  isValid() {
+    if (this.selectedLogicOption === "Custom") {
+      let customLogicInput = this.template.querySelector(".customLogic");
+      let hasError = false;
+      if (this.customLogic) {
+        let matched = this.customLogic.match(new RegExp("\\d+", "gi"), "(");
+        if (!matched) {
+          hasError = true;
+        }
+        if (customLogicInput && !hasError) {
+          for (let i = 1; i <= this.filters.length; i++) {
+            matched = matched.filter((curElement) => curElement !== "" + i);
+            if (!this.customLogic || !this.customLogic.includes(i)) {
+              hasError = true;
+              break;
+            }
+          }
+          if (matched.length) {
+            hasError = true;
+          }
+        }
+      } else {
+        hasError = true;
+      }
+      if (hasError) {
+        customLogicInput.setCustomValidity("Invalid custom conditions");
+      } else {
+        customLogicInput.setCustomValidity("");
+      }
+      customLogicInput.reportValidity();
+      return !hasError;
+    }
+
+    return true;
+  }
+
+  @api
+  throwError() {
+    if (this.selectedLogicOption === "Custom") {
+      let customLogicInput = this.template.querySelector(".customLogic");
+      customLogicInput.setCustomValidity("Invalid custom conditions");
+      customLogicInput.reportValidity();
+    }
   }
 }

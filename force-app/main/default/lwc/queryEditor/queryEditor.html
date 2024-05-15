@@ -87,7 +87,6 @@
               field-details={fieldDetails}
               selected-fields={selectedFields}
               onfetchresults={fetchResults}
-              object-info={objectInfo}
             ></c-dynamic-filter>
           </div>
 
@@ -157,57 +156,4 @@
       </div>
     </div>
   </lightning-card>
-
-  <!--<lightning-card
-    variant="Narrow"
-    title="Query Builder"
-    icon-name="standard:account"
-  >
-    <div class="slds-p-horizontal_small">
-      <div class="slds-grid slds-gutters slds-p-around_medium">
-        <div class="slds-col slds-size_2-of-6" lwc:if={objectList.length}>
-          <c-searchable-combobox
-            label="Search Object"
-            options={objectList}
-            onselect={handleObjectChange}
-          ></c-searchable-combobox>
-        </div>
-        <div class="slds-col slds-size_4-of-6" lwc:if={fieldOptions.length}>
-          <lightning-dual-listbox
-            name="Select Fields"
-            label="Select Fields"
-            selected-label=""
-            field-level-help="Select Fields"
-            options={fieldOptions}
-            onchange={handleFieldChange}
-          ></lightning-dual-listbox>
-        </div>
-      </div>
-
-      <div class="slds-grid slds-gutters slds-p-around_medium">
-        <div class="slds-col slds-size_1-of-1" lwc:if={fieldOptions.length}>
-          <c-dynamic-filter
-            object-api-name={selectedObject}
-            field-options={fieldOptions}
-            field-details={fieldDetails}
-            selected-fields={selectedFields}
-            onfetchresults={fetchResults}
-          ></c-dynamic-filter>
-        </div>
-      </div>
-
-      <div class="slds-grid slds-gutters slds-p-around_medium">
-        <div class="slds-col slds-size_1-of-1" lwc:if={showDatatable}>
-          <c-dynamic-table
-            object-data={queryData}
-            selected-columns={selectedColumnsMap}
-          >
-          </c-dynamic-table>
-         
-
-          
-        </div>
-      </div>
-    </div>
-  </lightning-card>-->
 </template>

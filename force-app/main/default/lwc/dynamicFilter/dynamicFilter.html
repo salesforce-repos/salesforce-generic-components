@@ -22,6 +22,7 @@
         value={customLogic}
         placeholder="1 OR (2 AND 3)"
         onchange={handleCustomLogicChange}
+        onblur={handleValidateBrackets}
       ></lightning-input>
     </div>
 
@@ -62,6 +63,7 @@
                 onchange={handleOperatorChange}
                 data-index={index}
                 disabled={filter.operatorDisabled}
+                required="true"
               ></lightning-combobox>
             </div>
 
@@ -137,132 +139,4 @@
       ></lightning-button>
     </div>
   </div>
-  <!--<div class="main-container">
-    <div class="rules-container">
-      <div class="main-label-container">
-        <h3>Select Logic</h3>
-      </div>
-      <div class="text-input-dropdown dynamic-combobox-container logic">
-        <lightning-combobox
-          class="main-combobox"
-          label="Logic Type"
-          value={selectedObject}
-          options={logicOptions}
-          onchange={handleLogicOptionChange}
-          dropdown-alignment="auto"
-        ></lightning-combobox>
-      </div>
-
-      <div class="text-input-container">
-        <lightning-input
-          lwc:if={isCustomLogic}
-          type="text"
-          variant="standard"
-          value={customLogic}
-          label="Value"
-          placeholder="1 OR (2 AND 3)"
-          onchange={handleCustomLogicChange}
-        >
-        </lightning-input>
-      </div>
-    </div>
-
-    <template for:each={filters} for:item="filter" for:index="index">
-      <div key={filter.field} class="rules-container">
-        <div class="main-label-container">
-          <h3>Filter {filter.sequence}</h3>
-        </div>
-        <div class="main-combobox-container">
-          <lightning-combobox
-            class="main-combobox"
-            label="Field"
-            value={filter.field}
-            options={fieldOptions}
-            onchange={handleFieldChange}
-            data-index={index}
-            dropdown-alignment="auto"
-          ></lightning-combobox>
-        </div>
-        <div class="text-input-dropdown dynamic-combobox-container">
-          <lightning-combobox
-            class="dynamic-combobox"
-            label="Operator"
-            value={filter.operator}
-            options={filter.operatorOptions}
-            onchange={handleOperatorChange}
-            data-index={index}
-            dropdown-alignment="auto"
-          ></lightning-combobox>
-        </div>
-
-        <div class="text-input-container">
-          <lightning-input
-            lwc:if={filter.isType}
-            type={filter.fieldType}
-            variant="standard"
-            formatter={filter.formatter}
-            value={filter.value}
-            label="Value"
-            onchange={handleValueChange}
-            data-index={index}
-          >
-          </lightning-input>
-
-          <div
-            class="rule-value-combobox multi-select"
-            lwc:if={filter.showPicklistInput}
-          >
-            <c-multi-select-combobox
-              index={index}
-              onselect={handleMultiSelect}
-              multi-select="true"
-              options={filter.options}
-              selected-values={filter.selectedValues}
-            >
-            </c-multi-select-combobox>
-          </div>
-
-          <lightning-combobox
-            lwc:if={filter.showBooleanInput}
-            class="rule-value-combobox"
-            label="Value"
-            value={filter.value}
-            options={filter.options}
-            onchange={handleValueChange}
-            data-index={index}
-            variant="standard"
-            dropdown-alignment="auto"
-          ></lightning-combobox>
-        </div>
-
-        
-
-        <div class="remove-rules icon-wrapper">
-          <lightning-button-icon
-            disabled={preventRemoval}
-            icon-name="utility:delete"
-            alternative-text="Delete"
-            onclick={removeFilter}
-            data-index={index}
-          >
-          </lightning-button-icon>
-
-          
-        </div>
-      </div>
-    </template>
-
-    <div class="add-rules">
-      <div class="main-label-container"></div>
-      <lightning-button
-        variant="base"
-        label="+ Add Filter"
-        title="+ Add Filter"
-        onclick={addFilter}
-        class="add-button slds-m-left_x-small"
-      ></lightning-button>
-    </div>
-
-    
-  </div>-->
 </template>

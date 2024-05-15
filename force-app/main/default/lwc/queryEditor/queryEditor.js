@@ -5,10 +5,12 @@ import fetchData from "@salesforce/apex/QueryEditorController.fetchData";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import { getObjectInfo } from "lightning/uiObjectInfoApi";
 
+import { standardObjectOptions } from "c/commonLibrary";
+
 export default class QueryEditor extends LightningElement {
   selectedObject = "";
   @track objectData = [];
-  @track objectList = [];
+  @track objectList = standardObjectOptions;
   @track fieldList = [];
   @track fieldOptions = [];
   selectedFields = "";
@@ -48,43 +50,63 @@ export default class QueryEditor extends LightningElement {
       : "slds-col slds-size--9-of-12 slds-p-left--small slds-p-top_medium slds-border_top slds-border_right slds-border_bottom slds-border_left";
   }
 
-  handleFieldSelected(event) {
-    // this.notifyAssignee = event.target.checked === true;
-    console.log("@@ event.detail.value " + event.detail.value);
-    this._selectedFields = this.toggle(
-      this._selectedFields,
-      event.detail.value,
-      true
-    );
-    //this.prepareFieldDescriptors();
-    //this.buildQuery();
-  }
+  @wire(getAllObject)
+  objectDetails({ data, error }) {
+    if (data) {
+      this.objectData = data;
+      for (var key in data) {
+        this.objectList.push({ label: data[key], value: key });
+      }
 
-  handleRemoveAll(event) {
-    this._selectedFields = [];
-    this.prepareFieldDescriptors();
-    this._queryString = "";
-    this.buildQuery();
-  }
-
-  handleAddAll(event) {
-    this._selectedFields = this.fieldOptions.map(
-      (curOption) => curOption.value
-    );
-    this.prepareFieldDescriptors();
-    this.buildQuery();
-  }
-
-  handleFieldRemove(event) {
-    this._selectedFields = this.toggle(
-      this._selectedFields,
-      event.detail.value
-    );
-    if (!this._selectedFields || !this._selectedFields.length) {
-      this._queryString = "";
+      this.objectList = this.sortData(this.objectList);
     }
-    this.prepareFieldDescriptors();
-    this.buildQuery();
+    if (error) console.error(error);
+  }
+
+  @wire(getObjectInfo, { objectApiName: "$selectedObject" })
+  _getObjectInfo({ error, data }) {
+    if (error) {
+      console.error(error);
+    } else if (data) {
+      this.isLoading = true;
+      this.objectInfo = data;
+      const allowedDataTypes = [
+        "String",
+        "Picklist",
+        "Url",
+        "Email",
+        "Reference",
+        "Phone",
+        "Date",
+        "DateTime",
+        "Currency",
+        "Double",
+        "Boolean",
+        "Int",
+        "Address"
+      ];
+
+      this.fieldDetails = Object.values(data.fields)
+        .filter((field) => field.apiName !== "Id")
+        .map((field) => ({
+          label: `${field.label}`,
+          value: field.apiName,
+          dataType: field.dataType,
+          selected: false
+        }));
+
+      this.fieldDetails = this.sortData(this.fieldDetails);
+
+      this.fieldOptions = Object.values(data.fields)
+        .filter((field) => allowedDataTypes.includes(field.dataType))
+        .map((field) => ({
+          label: `${field.label}`,
+          value: field.apiName
+        }));
+
+      this.fieldOptions = this.sortData(this.fieldOptions);
+      this.isLoading = false;
+    }
   }
 
   handleOrderByChanged(event) {
@@ -99,65 +121,17 @@ export default class QueryEditor extends LightningElement {
     this.limit = event.detail.value;
   }
 
-  toggle(array, element, skipIfPersists) {
-    if (array && element) {
-      if (array.includes(element)) {
-        if (skipIfPersists) {
-          this.flashSelectedField(element);
-          return array;
-        } else {
-          return array.filter((curElement) => curElement != element);
-        }
-      } else {
-        array.push(element);
-        return array;
+  sortData(data) {
+    data.sort((a, b) => {
+      if (a.label < b.label) {
+        return -1;
       }
-    } else {
-      return array;
-    }
-  }
-
-  @wire(getAllObject)
-  objectDetails({ data, error }) {
-    if (data) {
-      this.objectData = data;
-      for (var key in data) {
-        this.objectList.push({ label: data[key], value: key });
+      if (a.label > b.label) {
+        return 1;
       }
-    }
-    if (error) console.error(error);
-  }
-
-  @wire(getObjectInfo, { objectApiName: "$selectedObject" })
-  _getObjectInfo({ error, data }) {
-    if (error) {
-      showToast("Error", getErrorMessage(error), "error");
-    } else if (data) {
-      this.isLoading = true;
-      this.objectInfo = data;
-      const allowedDataTypes = ["String", "Currency"];
-
-      console.log("@@ data " + JSON.stringify(data));
-      this.fieldDetails = Object.values(data.fields).map((field) => ({
-        label: `${field.label}`,
-        value: field.apiName,
-        dataType: field.dataType,
-        selected: false
-      }));
-
-      this.fieldOptions = Object.values(data.fields).map((field) => ({
-        label: `${field.label}`,
-        value: field.apiName
-      }));
-
-      this.isLoading = false;
-      /*this.fieldOptions = Object.values(data.fields)
-        .filter((field) => allowedDataTypes.includes(field.dataType))
-        .map((field) => ({
-          label: `${field.label}`,
-          value: field.apiName
-        }));*/
-    }
+      return 0;
+    });
+    return data;
   }
 
   addAllFields() {
@@ -180,76 +154,21 @@ export default class QueryEditor extends LightningElement {
     return [...[{ label: "--NONE--", value: "" }], ...this.fieldOptions];
   }
 
-  getFieldDetails() {
-    getAllfields({ sObjectName: this.selectedObject })
-      .then((data) => {
-        this.fieldDetails = data;
-        this.fieldOptions = [];
-        this.selectedColumnsMap = [];
-        this.queryData = [];
-        this.selectedFields = "";
-        const allowedDataTypes = ["String", "Currency"];
-
-        console.log("@@ data " + JSON.stringify(data));
-        /*this.fieldDetails = Object.values(data.fields).map((field) => ({
-          label: `${field.label}`,
-          value: field.apiName,
-          dataType: field.dataType,
-          selected: false
-        }));*/
-
-        this.fieldOptions = Object.values(data.fields).map((field) => ({
-          label: `${field.label}`,
-          value: field.name
-        }));
-
-        /*this.fieldOptions = Object.values(data.fields)
-          .filter((field) => allowedDataTypes.includes(field.dataType))
-          .map((field) => ({
-            label: `${field.label}`,
-            value: field.apiName
-          }));*/
-      })
-      .catch((error) => {
-        console.error(error);
-        const evt = new ShowToastEvent({
-          title: "Error",
-          message: "Error While Fetching Fields.",
-          variant: "error",
-          mode: "dismissable"
-        });
-        this.dispatchEvent(evt);
-      });
-  }
-
   handleObjectChange(event) {
     this.selectedObject = event.detail.value;
-    //this.getFieldDetails();
-    /*if (event.detail) {
-      let payload = event.detail.payload;
-      const value = payload.value;
-      this.selectedObject = value;
-
-      this.getFieldDetails();
-    }*/
   }
 
   handleFieldChange(event) {
-    //this.selectedFields = event.detail.value;
-    const itemName = event.target.label;
     const isChecked = event.target.checked;
     let index = event.currentTarget.dataset.index;
     this.fieldDetails[index].selected = isChecked;
   }
 
   handleFetchResults(event) {
-    console.log("@@ in r");
-
     this.template.querySelector("c-dynamic-filter").generateSOQLQuery();
   }
 
   fetchResults(event) {
-    console.log("@@ in ev " + JSON.stringify(event.detail));
     try {
       if (event.detail) {
         const selectedFieldsString = this.fieldDetails
@@ -260,6 +179,17 @@ export default class QueryEditor extends LightningElement {
         const selectedColumns = this.fieldDetails.filter((item) => {
           return item.selected;
         });
+
+        if (selectedColumns.length === 0) {
+          const evt = new ShowToastEvent({
+            title: "Error",
+            message: "Select atleast 1 field to display.",
+            variant: "error",
+            mode: "dismissable"
+          });
+          this.dispatchEvent(evt);
+          return;
+        }
 
         let soql =
           "SELECT Id, " +
@@ -284,7 +214,6 @@ export default class QueryEditor extends LightningElement {
               : "ASC";
         }
 
-        console.log("@@ li " + this.limit);
         if (this.limit) {
           soql += " LIMIT ";
           soql += this.limit;
@@ -312,12 +241,6 @@ export default class QueryEditor extends LightningElement {
               return;
             }
 
-            /*let columnsToDisplay = this.fieldOptions.filter((obj) =>
-              this.selectedFields.includes(obj.value)
-            );
-
-            this.columnsToSearch = columnsToDisplay;
-*/
             this.selectedColumnsMap = [];
             selectedColumns.forEach((column) => {
               this.selectedColumnsMap.push({
@@ -341,13 +264,16 @@ export default class QueryEditor extends LightningElement {
             }
 
             this.queryData = allrecords;
-            console.log("@@ query data " + JSON.stringify(this.queryData));
-            console.log(
-              "@@ selectedColumnsMap " + JSON.stringify(this.selectedColumnsMap)
-            );
           })
           .catch((error) => {
+            if (
+              error.body.message.includes("AND") ||
+              error.body.message.includes("OR")
+            ) {
+              this.template.querySelector("c-dynamic-filter").throwError();
+            }
             console.error(error);
+
             const evt = new ShowToastEvent({
               title: "Error",
               message: "Unable To Fetch Data",

@@ -14,9 +14,13 @@ public class QueryEditorController {
         //prepare a Map to send Data from Server to Client Side
         
         for(Schema.SObjectType objType : objectMapValues){
-            String key = objType.getDescribe().getName();
-            String value = objType.getDescribe().getLabel();
-            returnObjectMap.put(key,value);
+            String name = objType.getDescribe().getName();
+            if (objType.getDescribe().isCustom() && !name.containsignorecase('history') && !name.containsignorecase('tag') && !name.containsignorecase('share') && !name.containsignorecase('feed')) {
+                    String key = objType.getDescribe().getName();
+                    String value = objType.getDescribe().getLabel();
+                    returnObjectMap.put(key,value);
+                }
+            
         }
         System.debug(returnObjectMap);
         if(returnObjectMap != null && returnObjectMap.size() > 0){
@@ -91,7 +95,7 @@ public class QueryEditorController {
 
         }
         catch(Exception ex) {
-            throw new AuraHandledException('Unable to fetch data');
+            throw new AuraHandledException('Unable to fetch data'+ex);
         }
         
         return sobjectData;
