@@ -13,8 +13,12 @@
     if:false={errorMessage}
     class="slds-p-around--none"
   >
-    <div class="slds-grid slds-gutters slds-p-left--small slds-p-right--small">
-      <div class="slds-col slds-size--3-of-12">
+    <div
+      class="slds-grid slds-gutters slds-p-left--large slds-p-bottom_medium slds-p-right--large"
+    >
+      <div
+        class="slds-col slds-size--4-of-12 slds-border_top slds-var-m-right_x-small slds-border_right slds-border_bottom slds-border_left"
+      >
         <lightning-combobox
           lwc:if={objectList.length}
           class="slds-p-left--none"
@@ -36,9 +40,8 @@
         </div>
 
         <div class="container" lwc:if={fieldDetails.length}>
-          <div class="header list-container">
+          <!--<div class="header">
             <div class="header-content">
-              <h2>Select Fields</h2>
               <div class="buttons-container">
                 <lightning-button
                   label="+ Add All"
@@ -54,9 +57,19 @@
                 ></lightning-button>
               </div>
             </div>
-          </div>
+          </div>-->
 
-          <div class="list-container">
+          <lightning-dual-listbox
+            name="languages"
+            label="Select Fields"
+            source-label="Available"
+            selected-label="Selected"
+            field-level-help="Select Fields To Display"
+            options={fieldDetails}
+            onchange={handleFieldChange}
+          ></lightning-dual-listbox>
+
+          <!--<div class="list-container">
             <template for:each={fieldDetails} for:item="item" for:index="index">
               <div key={item.value} class="item">
                 <lightning-input
@@ -68,7 +81,7 @@
                 ></lightning-input>
               </div>
             </template>
-          </div>
+          </div>-->
         </div>
       </div>
 
@@ -86,12 +99,13 @@
               field-options={fieldOptions}
               field-details={fieldDetails}
               selected-fields={selectedFields}
+              filters={filters}
               onfetchresults={fetchResults}
             ></c-dynamic-filter>
           </div>
 
           <div class="slds-grid slds-wrap slds-p-left--xx-small">
-            <div class="slds-col slds-size--3-of-12 slds-p-around_none">
+            <div class="slds-col slds-size--4-of-12 slds-p-around_none">
               <lightning-input
                 name="limit"
                 type="Number"
@@ -142,17 +156,70 @@
         <div
           class="slds-grid slds-wrap slds-p-top_medium slds-p-bottom_medium slds-p-left--xx-small"
         >
-          <div
+          <!--<div
             class="slds-col slds-size_1-of-1 slds-border_top slds-border_right slds-border_bottom slds-border_left"
             lwc:if={showDatatable}
           >
-            <c-dynamic-table
+            <c-lwc-datatable-utility
+              records={queryData}
+              total-records={queryData.length}
+              columns={selectedColumnsMap}
+              key-field="Id"
+              editable="true"
+              can-delete="true"
+              show-search-box="true"
+              max-row-selection={queryData.length}
+              onpaginatorchange={handlePaginatorChange}
+              onsetselectedrecords={handleAllSelectedRows}
+              object-name={selectedObject}
+              table-height="200"
+            >
+            </c-lwc-datatable-utility>-->
+
+          <!--<c-common-datatable
+              columns={selectedColumnsMap}
+              records={queryData}
+              editable="true"
+              can-delete="true"
+              show-pagination="true"
+              pagination-size="5"
+              object-name={selectedObject}
+              enable-field-search="true"
+              search-fields={columnsToSearch}
+            ></c-common-datatable>-->
+
+          <!--<c-dynamic-table
               object-data={queryData}
               selected-columns={selectedColumnsMap}
             >
             </c-dynamic-table>
-          </div>
+          </div>-->
         </div>
+      </div>
+    </div>
+
+    <div
+      class="slds-grid slds-gutters slds-p-left--large slds-p-right--large"
+      lwc:if={showDatatable}
+    >
+      <div
+        class="slds-col slds-size--1-of-1 slds-border_top slds-border_right slds-border_bottom slds-border_left"
+      >
+        <c-lwc-datatable-utility
+          records={queryData}
+          total-records={queryData.length}
+          columns={selectedColumnsMap}
+          key-field="Id"
+          editable="true"
+          can-delete="true"
+          show-search-box="true"
+          max-row-selection={queryData.length}
+          onpaginatorchange={handlePaginatorChange}
+          onsetselectedrecords={handleAllSelectedRows}
+          object-name={selectedObject}
+          table-height="200"
+        >
+        </c-lwc-datatable-utility>
       </div>
     </div>
   </lightning-card>

@@ -2,15 +2,25 @@ import { LightningElement, api, wire, track } from "lwc";
 
 import getPickListvaluesByFieldName from "@salesforce/apex/QueryEditorController.getOptionsForSelectedPicklistField";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
+import { filterWrapper } from "c/commonLibrary";
 export default class DynamicFilter extends LightningElement {
   @api objectApiName; // Input property to accept custom object API name
   @api fieldOptions; // Input property to accept fields information
   @api fieldDetails;
   @api selectedFields;
+  @api
+  get filters() {
+    return this._filters;
+  }
+
+  set filters(value) {
+    this._filters = JSON.parse(JSON.stringify(value));
+  }
 
   error = false;
   @track currentPicklistField;
   currentIndex;
+  @track _filters = [];
 
   @track logicOptions = [
     { label: "AND", value: "AND" },
@@ -142,26 +152,7 @@ export default class DynamicFilter extends LightningElement {
     }
   };
 
-  @track filters = [
-    {
-      sequence: 1,
-      field: "",
-      operator: "",
-      value: "",
-      condition: "AND",
-      fieldType: "",
-      showPicklistInput: false,
-      showBooleanInput: false,
-      options: [],
-      booleanOptions: [],
-      selectedValues: [],
-      operatorOptions: [],
-      isType: true,
-      formatter: "",
-      operatorDisabled: true,
-      valueDisabled: true
-    }
-  ]; // Array to store filter objects { field, operator, value, condition }
+  //@track filters = filterWrapper; // Array to store filter objects { field, operator, value, condition }
   soqlQuery;
 
   booleanOptions = [
@@ -176,8 +167,8 @@ export default class DynamicFilter extends LightningElement {
     })
       .then((result) => {
         if (result) {
-          this.filters[this.currentIndex].options = result;
-          this.filters[this.currentIndex].valueDisabled = false;
+          this._filters[this.currentIndex].options = result;
+          this._filters[this.currentIndex].valueDisabled = false;
         }
       })
       .catch((error) => {
@@ -190,8 +181,8 @@ export default class DynamicFilter extends LightningElement {
   }
 
   addFilter() {
-    this.filters.push({
-      sequence: this.filters.length + 1,
+    this._filters.push({
+      sequence: this._filters.length + 1,
       field: "",
       operator: "",
       value: "",
@@ -211,104 +202,108 @@ export default class DynamicFilter extends LightningElement {
   }
 
   clearFilterData(index) {
-    this.filters[index].field = "";
-    this.filters[index].operator = "";
-    this.filters[index].value = "";
-    this.filters[index].fieldType = "";
-    this.filters[index].showPicklistInput = false;
-    this.filters[index].showBooleanInput = false;
-    this.filters[index].options = [];
-    this.filters[index].selectedValues = [];
-    this.filters[index].operatorOptions = [];
-    this.filters[index].isType = true;
-    this.filters[index].formatter = "";
+    this._filters[index].field = "";
+    this._filters[index].operator = "";
+    this._filters[index].value = "";
+    this._filters[index].fieldType = "";
+    this._filters[index].showPicklistInput = false;
+    this._filters[index].showBooleanInput = false;
+    this._filters[index].options = [];
+    this._filters[index].selectedValues = [];
+    this._filters[index].operatorOptions = [];
+    this._filters[index].isType = true;
+    this._filters[index].formatter = "";
   }
 
   removeFilter(event) {
     let index = event.currentTarget.dataset.index;
-    if (this.filters.length === 1) {
+    if (this._filters.length === 1) {
       this.clearFilterData(0);
       return;
     }
 
-    let defaultFilters = JSON.parse(JSON.stringify(this.filters));
+    let defaultFilters = JSON.parse(JSON.stringify(this._filters));
     if (defaultFilters.length > 1) {
       defaultFilters.splice(index, 1);
       defaultFilters.forEach(function (item, ind) {
         item.sequence = ind + 1;
       });
-      this.filters = defaultFilters;
+      this._filters = defaultFilters;
     }
   }
 
   handleFieldChange(event) {
-    let index = event.currentTarget.dataset.index;
-    const { value } = event.target;
-    this.clearFilterData(index);
-    this.filters[index].field = value;
+    try {
+      let index = event.currentTarget.dataset.index;
+      const { value } = event.target;
+      this.clearFilterData(index);
+      this._filters[index].field = value;
 
-    // Get field type
-    const fieldDetail = this.fieldDetails.find(
-      (field) => field.value === value
-    );
+      // Get field type
+      const fieldDetail = this.fieldOptions.find(
+        (field) => field.value === value
+      );
 
-    if (fieldDetail) {
-      try {
-        this.filters[index].fieldType =
-          this.fieldTypeSettings[fieldDetail.dataType].inputType;
+      if (fieldDetail) {
+        try {
+          this._filters[index].fieldType =
+            this.fieldTypeSettings[fieldDetail.dataType].inputType;
 
-        this.filters[index].operatorOptions = this.operations.filter(
-          (operation) => operation.types.includes(fieldDetail.dataType)
-        );
+          this._filters[index].operatorOptions = this.operations.filter(
+            (operation) => operation.types.includes(fieldDetail.dataType)
+          );
 
-        this.filters[index].operatorDisabled = false;
+          this._filters[index].operatorDisabled = false;
 
-        this.filters[index].isType =
-          this.fieldTypeSettings[fieldDetail.dataType].isType;
+          this._filters[index].isType =
+            this.fieldTypeSettings[fieldDetail.dataType].isType;
 
-        this.filters[index].showPicklistInput =
-          this.fieldTypeSettings[fieldDetail.dataType]?.hasOwnProperty(
-            "showPicklistInput"
-          ) || false;
+          this._filters[index].showPicklistInput =
+            this.fieldTypeSettings[fieldDetail.dataType]?.hasOwnProperty(
+              "showPicklistInput"
+            ) || false;
 
-        if (this.filters[index].showPicklistInput) {
-          if (this.filters[index].options.length === 0) {
-            this.currentIndex = index;
-            this.currentPicklistField = this.filters[index].field;
-            this.getPicklistValuesForSelectedPicklistField();
+          if (this._filters[index].showPicklistInput) {
+            if (this._filters[index].options.length === 0) {
+              this.currentIndex = index;
+              this.currentPicklistField = this._filters[index].field;
+              this.getPicklistValuesForSelectedPicklistField();
+            }
+            //this._filters[index].options = fieldDetail.picklistOptions;
+          } else {
+            this._filters[index].valueDisabled = false;
           }
-          //this.filters[index].options = fieldDetail.picklistOptions;
-        } else {
-          this.filters[index].valueDisabled = false;
-        }
 
-        this.filters[index].showBooleanInput =
-          this.fieldTypeSettings[fieldDetail.dataType]?.hasOwnProperty(
-            "showBooleanInput"
-          ) || false;
+          this._filters[index].showBooleanInput =
+            this.fieldTypeSettings[fieldDetail.dataType]?.hasOwnProperty(
+              "showBooleanInput"
+            ) || false;
 
-        if (this.filters[index].showBooleanInput) {
-          this.filters[index].booleanOptions = this.booleanOptions;
+          if (this._filters[index].showBooleanInput) {
+            this._filters[index].booleanOptions = this.booleanOptions;
+          }
+        } catch (err) {
+          console.error(err);
         }
-      } catch (err) {
-        console.error(err);
       }
+    } catch (error) {
+      console.error(error);
     }
   }
 
   handleOperatorChange(event) {
     const { value } = event.target;
-    this.filters[event.currentTarget.dataset.index].operator = value;
+    this._filters[event.currentTarget.dataset.index].operator = value;
   }
 
   handleValueChange(event) {
     const { value } = event.target;
-    this.filters[event.currentTarget.dataset.index].value = value;
+    this._filters[event.currentTarget.dataset.index].value = value;
   }
 
   handleConditionChange(event) {
     const { value } = event.target;
-    this.filters[event.currentTarget.dataset.index].condition = value;
+    this._filters[event.currentTarget.dataset.index].condition = value;
   }
 
   @api
@@ -327,7 +322,7 @@ export default class DynamicFilter extends LightningElement {
     try {
       let showWhere = false;
       let soqlWhere = "";
-      let completeConditions = this.filters.filter(
+      let completeConditions = this._filters.filter(
         (curCondition) => curCondition.field
       );
       if (completeConditions && completeConditions.length) {
@@ -404,12 +399,13 @@ export default class DynamicFilter extends LightningElement {
   handleMultiSelect(event) {
     if (event.detail) {
       let payload = event.detail.payload;
-      this.filters[payload.index].selectedValues = payload.values;
+      this._filters[payload.index].selectedValues = payload.values;
     }
   }
 
   handleLogicOptionChange(event) {
     this.selectedLogicOption = event.detail.value;
+    this.error = false;
   }
 
   handleCustomLogicChange(event) {
@@ -514,7 +510,7 @@ export default class DynamicFilter extends LightningElement {
           hasError = true;
         }
         if (customLogicInput && !hasError) {
-          for (let i = 1; i <= this.filters.length; i++) {
+          for (let i = 1; i <= this._filters.length; i++) {
             matched = matched.filter((curElement) => curElement !== "" + i);
             if (!this.customLogic || !this.customLogic.includes(i)) {
               hasError = true;
@@ -547,5 +543,17 @@ export default class DynamicFilter extends LightningElement {
       customLogicInput.setCustomValidity("Invalid custom conditions");
       customLogicInput.reportValidity();
     }
+  }
+
+  @api
+  resetAll() {
+    console.log("@@ in reset");
+    this._filters = [];
+    this.selectedLogicOption = "AND";
+    this.customLogic = "";
+    this.currentIndex = 0;
+    this.currentPicklistField = "";
+    this._filters = filterWrapper;
+    console.log("@@ in " + JSON.stringify(filterWrapper));
   }
 }

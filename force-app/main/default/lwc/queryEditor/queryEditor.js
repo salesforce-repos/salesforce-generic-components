@@ -5,7 +5,7 @@ import fetchData from "@salesforce/apex/QueryEditorController.fetchData";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import { getObjectInfo } from "lightning/uiObjectInfoApi";
 
-import { standardObjectOptions } from "c/commonLibrary";
+import { standardObjectOptions, filterWrapper } from "c/commonLibrary";
 
 export default class QueryEditor extends LightningElement {
   selectedObject = "";
@@ -19,10 +19,12 @@ export default class QueryEditor extends LightningElement {
   @track columnsToSearch = [];
   @track fieldPickerStyle;
   @track fieldDetails = [];
+  @track filters = filterWrapper;
   @track objectInfo;
   orderByField = "";
   orderByDirection = "";
   isLoading = false;
+  @track selectedRows = [];
 
   orderByDirections = [
     { label: "ASC", value: "ASC" },
@@ -46,8 +48,8 @@ export default class QueryEditor extends LightningElement {
 
   get selectedObjectClass() {
     return !this.selectedObject
-      ? "slds-col slds-size--9-of-12"
-      : "slds-col slds-size--9-of-12 slds-p-left--small slds-p-top_medium slds-border_top slds-border_right slds-border_bottom slds-border_left";
+      ? "slds-col slds-size--8-of-12"
+      : "slds-col slds-size--8-of-12 slds-p-left--small slds-p-top_medium slds-border_top slds-border_right slds-border_bottom slds-border_left";
   }
 
   @wire(getAllObject)
@@ -68,7 +70,63 @@ export default class QueryEditor extends LightningElement {
     if (error) {
       console.error(error);
     } else if (data) {
+      //this.template.querySelector("c-dynamic-filter").resetAll();
       this.isLoading = true;
+      this.objectInfo = data;
+
+      this.filters = filterWrapper;
+      console.log("@@ in wire " + JSON.stringify(filterWrapper));
+
+      const allowedDataTypes = new Set([
+        "String",
+        "Picklist",
+        "Url",
+        "Email",
+        "Reference",
+        "Phone",
+        "Date",
+        "DateTime",
+        "Currency",
+        "Double",
+        "Boolean",
+        "Int",
+        "Address"
+      ]);
+
+      const fields = Object.values(data.fields);
+
+      let fieldDetails = [];
+      let fieldOptionsList = [];
+
+      for (const field of fields) {
+        if (allowedDataTypes.has(field.dataType)) {
+          const fieldOption = {
+            label: field.label,
+            value: field.apiName,
+            dataType: field.dataType
+          };
+          fieldOptionsList.push(fieldOption);
+        }
+        if (field.apiName !== "Id" && field.apiName !== "Name") {
+          const fieldDetail = {
+            label: field.label,
+            value: field.apiName,
+            dataType: field.dataType,
+            selected: false
+          };
+          fieldDetails.push(fieldDetail);
+        }
+      }
+
+      fieldDetails.sort((a, b) => a.label.localeCompare(b.label));
+      fieldOptionsList.sort((a, b) => a.label.localeCompare(b.label));
+
+      this.fieldDetails = fieldDetails;
+      this.fieldOptions = fieldOptionsList;
+
+      this.isLoading = false;
+
+      /*this.isLoading = true;
       this.objectInfo = data;
       const allowedDataTypes = [
         "String",
@@ -105,7 +163,7 @@ export default class QueryEditor extends LightningElement {
         }));
 
       this.fieldOptions = this.sortData(this.fieldOptions);
-      this.isLoading = false;
+      this.isLoading = false;*/
     }
   }
 
@@ -156,12 +214,16 @@ export default class QueryEditor extends LightningElement {
 
   handleObjectChange(event) {
     this.selectedObject = event.detail.value;
+    this.filters = [];
+    this.queryData = [];
   }
 
   handleFieldChange(event) {
-    const isChecked = event.target.checked;
+    this.selectedFields = event.detail.value;
+
+    /*const isChecked = event.target.checked;
     let index = event.currentTarget.dataset.index;
-    this.fieldDetails[index].selected = isChecked;
+    this.fieldDetails[index].selected = isChecked;*/
   }
 
   handleFetchResults(event) {
@@ -170,14 +232,15 @@ export default class QueryEditor extends LightningElement {
 
   fetchResults(event) {
     try {
+      this.queryData = [];
       if (event.detail) {
-        const selectedFieldsString = this.fieldDetails
+        /*const selectedFieldsString = this.fieldDetails
           .filter((item) => item.selected) // Filter the objects where checked is true
           .map((item) => item.value) // Extract the names from the filtered objects
-          .join(", ");
+          .join(", ");*/
 
         const selectedColumns = this.fieldDetails.filter((item) => {
-          return item.selected;
+          return this.selectedFields.includes(item.value);
         });
 
         if (selectedColumns.length === 0) {
@@ -192,8 +255,8 @@ export default class QueryEditor extends LightningElement {
         }
 
         let soql =
-          "SELECT Id, " +
-          selectedFieldsString +
+          "SELECT Id,Name, " +
+          this.selectedFields +
           " FROM " +
           this.selectedObject +
           " ";
@@ -218,7 +281,7 @@ export default class QueryEditor extends LightningElement {
           soql += " LIMIT ";
           soql += this.limit;
         } else {
-          soql += " LIMIT 50000";
+          soql += " LIMIT 5000";
         }
 
         //soqlQuery += " LIMIT 50000";
@@ -249,21 +312,33 @@ export default class QueryEditor extends LightningElement {
               });
             });
 
+            // Find the object in fieldOptions with the provided label
+            let apiName = "Name";
+            const foundValue = this.fieldOptions.find(
+              (option) => option.value === apiName
+            );
+
+            // Get the value of the found option, if it exists
+            const label = foundValue ? foundValue.label : "Name";
+
+            this.selectedColumnsMap.unshift({
+              label: label,
+              fieldName: "urlLink",
+              type: "url",
+              typeAttributes: {
+                label: { fieldName: "Name" },
+                target: "_blank"
+              }
+            });
+
             let allrecords = [];
             this.queryData = [];
-            for (let i = 0; i < result.length; i++) {
-              let rowData = result[i];
-              let row = rowData;
-              row.Id = rowData.Id;
-              for (let col in this.selectedColumnsMap) {
-                if (col.fieldName != "Id") {
-                  row[col.fieldName] = rowData[col.fieldName];
-                }
-              }
-              allrecords.push(row);
-            }
 
-            this.queryData = allrecords;
+            result.forEach((res) => {
+              res.urlLink = "/" + res.Id;
+            });
+
+            this.queryData = result;
           })
           .catch((error) => {
             if (
@@ -290,5 +365,28 @@ export default class QueryEditor extends LightningElement {
 
   get showDatatable() {
     return this.queryData.length > 0;
+  }
+
+  handlePaginatorChange(event) {
+    this.recordsToDisplay = event.detail.recordsToDisplay;
+    this.preSelected = event.detail.preSelected;
+    if (this.recordsToDisplay && this.recordsToDisplay > 0) {
+      this.rowNumberOffset = this.recordsToDisplay[0].rowNumber - 1;
+    } else {
+      this.rowNumberOffset = 0;
+    }
+  }
+
+  handleAllSelectedRows(event) {
+    this.selectedRows = [];
+    const selectedItems = event.detail;
+    /*let items = [];
+    selectedItems.forEach((item) => {
+      this.showActionButton = true;
+      console.log(item);
+      items.push(item);
+    });*/
+    this.selectedRows = selectedItems;
+    console.log("Selected Rows are " + JSON.stringify(this.selectedRows));
   }
 }

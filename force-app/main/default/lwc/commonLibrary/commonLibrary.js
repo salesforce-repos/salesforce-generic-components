@@ -38,6 +38,27 @@ const isNotBlank = (checkString) => {
   );
 };
 
+const filterWrapper = [
+  {
+    sequence: 1,
+    field: "",
+    operator: "",
+    value: "",
+    condition: "AND",
+    fieldType: "",
+    showPicklistInput: false,
+    showBooleanInput: false,
+    booleanOptions: [],
+    options: [],
+    selectedValues: [],
+    operatorOptions: [],
+    isType: true,
+    formatter: "",
+    operatorDisabled: true,
+    valueDisabled: true
+  }
+];
+
 const standardObjectOptions = [
   { value: "Account", label: "Account" },
   { value: "AccountPartner", label: "Account Partner" },
@@ -101,5 +122,6 @@ export {
   arrayContainsValue,
   findRowIndexById,
   isNotBlank,
-  standardObjectOptions
+  standardObjectOptions,
+  filterWrapper
 };
