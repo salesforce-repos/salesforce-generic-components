@@ -239,9 +239,17 @@ export default class QueryEditor extends LightningElement {
           .map((item) => item.value) // Extract the names from the filtered objects
           .join(", ");*/
 
-        const selectedColumns = this.fieldDetails.filter((item) => {
+        /*const selectedColumns = this.fieldDetails.filter((item) => {
           return this.selectedFields.includes(item.value);
-        });
+        });*/
+
+        const selectedColumns = this.fieldDetails
+          .filter((item) => this.selectedFields.includes(item.value))
+          .sort((a, b) => {
+            const indexA = this.selectedFields.indexOf(a.value);
+            const indexB = this.selectedFields.indexOf(b.value);
+            return indexA - indexB;
+          });
 
         if (selectedColumns.length === 0) {
           const evt = new ShowToastEvent({
