@@ -4,6 +4,10 @@ import getAllfields from "@salesforce/apex/QueryEditorController.getObjectFields
 import fetchData from "@salesforce/apex/QueryEditorController.fetchData";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import { getObjectInfo } from "lightning/uiObjectInfoApi";
+import { getRecord } from 'lightning/uiRecordApi';
+import UserId from '@salesforce/user/Id';
+import State from '@salesforce/schema/User.State';
+
 
 import { standardObjectOptions, filterWrapper } from "c/commonLibrary";
 
@@ -13,7 +17,7 @@ export default class QueryEditor extends LightningElement {
   @track objectList = standardObjectOptions;
   @track fieldList = [];
   @track fieldOptions = [];
-  selectedFields = "";
+  @track selectedFields = [];
   @track selectedColumnsMap = [];
   @track queryData = [];
   @track columnsToSearch = [];
@@ -51,11 +55,29 @@ export default class QueryEditor extends LightningElement {
       ? "slds-col slds-size--8-of-12"
       : "slds-col slds-size--8-of-12 slds-p-left--small slds-p-top_medium slds-border_top slds-border_right slds-border_bottom slds-border_left";
   }
+  billingState;
+  @wire(getRecord, { recordId: UserId, fields: [State] })
+  userDetails({ error, data }) {
+      if (error) {
+          console.error('Error in fetching State of User:'+JSON.stringify(error));
+      } else if (data) {
+        console.log('fetching State of User:'+JSON.stringify(data));
+        
+          if (data.fields.State.value != null) {
+
+              this.billingState = data.fields.State.value;
+
+            
+          }
+      }
+      console.log('billingState>>'+JSON.stringify(this.billingState))
+  }
 
   @wire(getAllObject)
   objectDetails({ data, error }) {
     if (data) {
       this.objectData = data;
+      this.selectedFields.push(...['Id','BillingCity','BillingState','Phone']);
       for (var key in data) {
         this.objectList.push({ label: data[key], value: key });
       }
@@ -73,9 +95,9 @@ export default class QueryEditor extends LightningElement {
       //this.template.querySelector("c-dynamic-filter").resetAll();
       this.isLoading = true;
       this.objectInfo = data;
-
-      this.filters = filterWrapper;
-      console.log("@@ in wire " + JSON.stringify(filterWrapper));
+   
+      //this.filters = filterWrapper;
+      console.log("@@ in wire " + JSON.stringify(this.filters));
 
       const allowedDataTypes = new Set([
         "String",
@@ -216,6 +238,27 @@ export default class QueryEditor extends LightningElement {
     this.selectedObject = event.detail.value;
     this.filters = [];
     this.queryData = [];
+    const filterWrapperAccount = [
+      {
+        sequence: 1,
+        field: "BillingState",
+        operator: " LIKE ",
+        value: this.billingState,
+        condition: "AND",
+        fieldType: "text",
+        showPicklistInput: false,
+        showBooleanInput: false,
+        booleanOptions: [],
+        options: [],
+        selectedValues: [],
+        operatorOptions: [],
+        isType: true,
+        formatter: "",
+        operatorDisabled: true,
+        valueDisabled: true
+      }
+    ];
+    this.filters = filterWrapperAccount;
   }
 
   handleFieldChange(event) {
