@@ -1,0 +1,11 @@
+<template>
+    <lightning-card  title="Results">
+        <div class="slds-p-horizontal_small">
+            <div lwc:if={objectData}>
+
+                <lightning-datatable key-field="Id" data={objectData} columns={selectedColumns}>
+                </lightning-datatable>
+            </div>
+        </div>
+    </lightning-card>
+</template>

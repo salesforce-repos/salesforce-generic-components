@@ -1,0 +1,81 @@
+.multi-select {
+	padding-top: 24px;
+}
+
+.rules-container {
+	display: flex;
+	align-items: center;
+	width: 100%;
+}
+
+.main-label-container {
+	margin: 17px 0px 0px 20px;
+	width: 6%;
+}
+
+.rule-logic-label {
+	margin: 17px 0px 0px 20px;
+}
+
+.main-combobox-container {
+	margin: 0 10px;
+	width: 34.5% !important;
+}
+
+.main-rulelogic-container {
+	margin: 0 10px;
+	width: 95% !important;
+}
+
+.dynamic-content-container {
+	margin: 0 10px;
+	width: 12%;
+}
+
+.text-input-dropdown {
+	margin: 0px 10px 0px 0px;
+	width: 15%;
+	/* line-height: 10px; */
+}
+
+.remove-rules {
+	margin: 23px 0 0 10px;
+	width: 3%;
+}
+
+.add-rules {
+	line-height: 30px;
+	font-size: 15px;
+	margin: 10px 0px -10px 0px;
+	display: flex;
+}
+
+.rules-container-box .icon-wrapper {
+	margin-top: 15px;
+}
+
+.rules-container-box {
+	display: grid;
+	align-items: center;
+	grid-template-columns: 7% 63.2% auto;
+	grid-gap: 10px;
+}
+
+.condition {
+	padding-left: 10px;
+}
+
+.soql-query {
+	padding-top: 50px;
+	text-align: center;
+}
+
+.logic {
+	margin-left: 11px;
+}
+
+.condition-number {
+	font-size: medium;
+	position: relative;
+	left: calc(-0.5 * var(--lwc-squareIconXSmallContent));
+}

@@ -1,0 +1,53 @@
+.list-container {
+    max-height: 300px;
+    /* Adjust the max-height value as per your requirement */
+    overflow-y: auto;
+    width: 366px;
+}
+
+.container {
+
+    margin: 12px;
+}
+
+.header {
+    font-size: 15px;
+    font-weight: bold;
+    color: #333;
+    text-align: left;
+}
+
+.header h2 {
+    font-size: 15px;
+    font-weight: 400;
+    color: #333;
+}
+
+.item {
+    margin-bottom: 10px;
+}
+
+.buttons-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.btn-fetch {
+    text-align: center;
+    padding-top: 50px;
+}
+
+.generated-class {
+    font-size: 18px;
+    font-weight: 500;
+    color: #01589d;
+    opacity: 1;
+}

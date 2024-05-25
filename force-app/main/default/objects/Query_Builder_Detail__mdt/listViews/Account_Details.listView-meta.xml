@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Account_Details</fullName>
+    <columns>MasterLabel</columns>
+    <columns>DeveloperName</columns>
+    <columns>Active__c</columns>
+    <columns>Field__c</columns>
+    <columns>Filtered_Field__c</columns>
+    <columns>Filter_Value__c</columns>
+    <columns>Object__c</columns>
+    <columns>Operator__c</columns>
+    <columns>Profile_Name__c</columns>
+    <columns>Selected_Field__c</columns>
+    <filterScope>Everything</filterScope>
+    <filters>
+        <field>Object__c</field>
+        <operation>equals</operation>
+        <value>Account</value>
+    </filters>
+    <label>Account Details</label>
+    <language>en_US</language>
+</ListView>
