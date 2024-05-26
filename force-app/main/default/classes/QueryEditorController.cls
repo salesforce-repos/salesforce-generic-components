@@ -142,7 +142,7 @@ public class QueryEditorController {
     
      @AuraEnabled(cacheable = true)
     public static Map<String,List<PicklistOption>> getPicklistValuesFromApex(string selectedObjectName, List<string> picklistFields){
-        List<PicklistOption> picklistOptions = new List<PicklistOption>();
+        
         try {
             Map<String,List<PicklistOption>> picklistMap = new Map<String,List<PicklistOption>>();
             System.debug('selectedObjectName '+selectedObjectName);
@@ -151,6 +151,7 @@ public class QueryEditorController {
             
             for(String field : picklistFields ) {
                 Map<String, Schema.SObjectField> mapFields = Schema.getGlobalDescribe().get(selectedObjectName).getDescribe().fields.getMap();
+                List<PicklistOption> picklistOptions = new List<PicklistOption>();
                 Schema.DescribeFieldResult pickFieldResult = mapFields.get(field).getDescribe();   
                 List<Schema.PicklistEntry> picklistFields1 = pickFieldResult.getPicklistValues();
                 for( Schema.PicklistEntry pickListFields2 : picklistFields1)

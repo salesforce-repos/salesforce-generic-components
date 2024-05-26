@@ -93,6 +93,12 @@ export default class DynamicFilter extends LightningElement {
       isType: false,
       showPicklistInput: true
     },
+    MultiPicklist: {
+      inputType: "text",
+      dataTransformationFunction: "wrapInQuotes",
+      isType: false,
+      showPicklistInput: true
+    },
     Email: {
       inputType: "text",
       dataTransformationFunction: "wrapInQuotes",

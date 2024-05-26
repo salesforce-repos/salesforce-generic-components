@@ -64,13 +64,13 @@ const operations = [
     label: "Equals",
     value: "=",
     types:
-      "String,Picklist,Url,Email,TextArea,Reference,Phone,Date,DateTime,Currency,Double,Boolean,Int,Address,NestedField"
+      "String,Picklist,MultiPicklist,Url,Email,TextArea,Reference,Phone,Date,DateTime,Currency,Double,Boolean,Int,Address,NestedField"
   },
   {
     label: "Not Equals",
     value: "!=",
     types:
-      "String,Picklist,Url,Email,TextArea,Reference,Phone,Date,DateTime,Currency,Double,Boolean,Int,Address,NestedField"
+      "String,Picklist,MultiPicklist,Url,Email,TextArea,Reference,Phone,Date,DateTime,Currency,Double,Boolean,Int,Address,NestedField"
   },
   {
     label: "Less Than",
@@ -167,6 +167,23 @@ const standardObjectOptions = [
   { value: "WorkType", label: "Work Type" }
 ];
 
+const allowedDataTypes = new Set([
+  "String",
+  "Picklist",
+  "MultiPicklist",
+  "Url",
+  "Email",
+  "Reference",
+  "Phone",
+  "Date",
+  "DateTime",
+  "Currency",
+  "Double",
+  "Boolean",
+  "Int",
+  "Address"
+]);
+
 const fieldTypeSettings = {
   String: {
     inputType: "text",
@@ -174,6 +191,12 @@ const fieldTypeSettings = {
     isType: true
   },
   Picklist: {
+    inputType: "text",
+    dataTransformationFunction: "wrapInQuotes",
+    isType: false,
+    showPicklistInput: true
+  },
+  MultiPicklist: {
     inputType: "text",
     dataTransformationFunction: "wrapInQuotes",
     isType: false,
@@ -252,5 +275,6 @@ export {
   filterWrapper,
   operations,
   fieldTypeSettings,
-  booleanOptions
+  booleanOptions,
+  allowedDataTypes
 };

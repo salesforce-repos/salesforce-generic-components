@@ -16,7 +16,8 @@ import {
   filterWrapper,
   operations,
   fieldTypeSettings,
-  booleanOptions
+  booleanOptions,
+  allowedDataTypes
 } from "c/commonLibrary";
 
 export default class QueryEditor extends LightningElement {
@@ -33,8 +34,8 @@ export default class QueryEditor extends LightningElement {
   @track fieldDetails = [];
   @track filters = filterWrapper;
   @track objectInfo;
-  orderByField = "";
-  orderByDirection = "";
+  orderByField = "Name";
+  orderByDirection = "ASC";
   isLoading = false;
   @track selectedRows = [];
   userProfileName;
@@ -47,7 +48,7 @@ export default class QueryEditor extends LightningElement {
     { label: "DESC", value: "DESC" }
   ];
 
-  limit;
+  limit = 5000;
 
   labels = {
     chooseFields: "Return which fields:",
@@ -132,22 +133,6 @@ export default class QueryEditor extends LightningElement {
           var filterWrapper = [];
           var picklistFields = [];
 
-          const allowedDataTypes = new Set([
-            "String",
-            "Picklist",
-            "Url",
-            "Email",
-            "Reference",
-            "Phone",
-            "Date",
-            "DateTime",
-            "Currency",
-            "Double",
-            "Boolean",
-            "Int",
-            "Address"
-          ]);
-
           const fields = Object.values(data.fields);
 
           let fieldDetails = [];
@@ -176,8 +161,23 @@ export default class QueryEditor extends LightningElement {
             };
           });
 
+          console.log("@@ filtered fileds " + JSON.stringify(filteredFields));
+
+          const nameField = fields.find((field) => field.apiName === "Name");
+
+          if (nameField) {
+            fieldOptionsList.push({
+              label: nameField.label,
+              value: nameField.apiName,
+              dataType: nameField.dataType
+            });
+          }
+
           for (const field of filteredFields) {
-            if (allowedDataTypes.has(field.dataType)) {
+            if (
+              allowedDataTypes.has(field.dataType) &&
+              field.apiName !== "Name"
+            ) {
               const fieldOption = {
                 label: field.label,
                 value: field.apiName,
@@ -259,6 +259,8 @@ export default class QueryEditor extends LightningElement {
 
           this.fieldDetails = fieldDetails;
           this.fieldOptions = fieldOptionsList;
+
+          console.log("@@ field options " + JSON.stringify(this.fieldOptions));
 
           if (picklistFields.length > 0) {
             getPicklistValuesFromApex({
