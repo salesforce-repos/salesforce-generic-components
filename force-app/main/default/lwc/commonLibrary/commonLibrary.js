@@ -59,6 +59,56 @@ const filterWrapper = [
   }
 ];
 
+const operations = [
+  {
+    label: "Equals",
+    value: "=",
+    types:
+      "String,Picklist,Url,Email,TextArea,Reference,Phone,Date,DateTime,Currency,Double,Boolean,Int,Address,NestedField"
+  },
+  {
+    label: "Not Equals",
+    value: "!=",
+    types:
+      "String,Picklist,Url,Email,TextArea,Reference,Phone,Date,DateTime,Currency,Double,Boolean,Int,Address,NestedField"
+  },
+  {
+    label: "Less Than",
+    value: "<",
+    types: "Date,DateTime,Currency,Double,Int,NestedField"
+  },
+  {
+    label: "Greater Than",
+    value: ">",
+    types: "Date,DateTime,Currency,Double,Int,NestedField"
+  },
+  {
+    label: "Less Than Or Equals",
+    value: "<=",
+    types: "Date,DateTime,Currency,Double,Int,NestedField"
+  },
+  {
+    label: "Greater Than Or Equals",
+    value: ">=",
+    types: "Date,DateTime,Currency,Double,Int,NestedField"
+  },
+  {
+    label: "LIKE",
+    value: "LIKE",
+    types: "String,Url,Email,Reference,Phone,NestedField,Address"
+  },
+  {
+    label: "NOT LIKE",
+    value: "NOT LIKE",
+    types: "String,Url,Email,Reference,Phone,Address,NestedField"
+  }
+  /*{
+    label: "IN",
+    value: " IN ",
+    types: "String,Url,Email,Phone,Currency,Address,NestedField"
+  }*/
+];
+
 const standardObjectOptions = [
   { value: "Account", label: "Account" },
   { value: "AccountPartner", label: "Account Partner" },
@@ -117,11 +167,90 @@ const standardObjectOptions = [
   { value: "WorkType", label: "Work Type" }
 ];
 
+const fieldTypeSettings = {
+  String: {
+    inputType: "text",
+    dataTransformationFunction: "wrapInQuotes",
+    isType: true
+  },
+  Picklist: {
+    inputType: "text",
+    dataTransformationFunction: "wrapInQuotes",
+    isType: false,
+    showPicklistInput: true
+  },
+  Email: {
+    inputType: "text",
+    dataTransformationFunction: "wrapInQuotes",
+    isType: true
+  },
+  Currency: {
+    inputType: "number",
+    dataTransformationFunction: null,
+    isType: true
+  },
+  Address: {
+    inputType: null,
+    dataTransformationFunction: null,
+    isType: true
+  },
+  Double: {
+    inputType: "number",
+    dataTransformationFunction: null,
+    isType: true
+  },
+  TextArea: {
+    inputType: "text",
+    dataTransformationFunction: "wrapInQuotes",
+    isType: true
+  },
+  Reference: {
+    inputType: "text",
+    dataTransformationFunction: "wrapInQuotes",
+    isType: true
+  },
+  DateTime: {
+    inputType: "datetime",
+    dataTransformationFunction: null,
+    isType: true
+  },
+  Phone: {
+    inputType: "text",
+    dataTransformationFunction: "wrapInQuotes",
+    isType: true
+  },
+  Boolean: {
+    inputType: "checkbox",
+    dataTransformationFunction: "transformBoolean",
+    isType: false,
+    showBooleanInput: true
+  },
+  Date: { inputType: "date", dataTransformationFunction: null, isType: true },
+  Int: {
+    inputType: "number",
+    dataTransformationFunction: null,
+    isType: true
+  },
+  Url: {
+    inputType: "url",
+    dataTransformationFunction: "wrapInQuotes",
+    isType: true
+  }
+};
+
+const booleanOptions = [
+  { label: "True", value: "true" },
+  { label: "False", value: "false" }
+];
+
 export {
   showMessage,
   arrayContainsValue,
   findRowIndexById,
   isNotBlank,
   standardObjectOptions,
-  filterWrapper
+  filterWrapper,
+  operations,
+  fieldTypeSettings,
+  booleanOptions
 };

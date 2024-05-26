@@ -34,44 +34,44 @@ export default class DynamicFilter extends LightningElement {
   operations = [
     {
       label: "Equals",
-      value: " = ",
+      value: "=",
       types:
         "String,Picklist,Url,Email,TextArea,Reference,Phone,Date,DateTime,Currency,Double,Boolean,Int,Address,NestedField"
     },
     {
       label: "Not Equals",
-      value: " != ",
+      value: "!=",
       types:
         "String,Picklist,Url,Email,TextArea,Reference,Phone,Date,DateTime,Currency,Double,Boolean,Int,Address,NestedField"
     },
     {
       label: "Less Than",
-      value: " < ",
+      value: "<",
       types: "Date,DateTime,Currency,Double,Int,NestedField"
     },
     {
       label: "Greater Than",
-      value: " > ",
+      value: ">",
       types: "Date,DateTime,Currency,Double,Int,NestedField"
     },
     {
       label: "Less Than Or Equals",
-      value: " <= ",
+      value: "<=",
       types: "Date,DateTime,Currency,Double,Int,NestedField"
     },
     {
       label: "Greater Than Or Equals",
-      value: " >= ",
+      value: ">=",
       types: "Date,DateTime,Currency,Double,Int,NestedField"
     },
     {
       label: "LIKE",
-      value: " LIKE ",
+      value: "LIKE",
       types: "String,Url,Email,Reference,Phone,NestedField,Address"
     },
     {
       label: "NOT LIKE",
-      value: " NOT LIKE ",
+      value: "NOT LIKE",
       types: "String,Url,Email,Reference,Phone,Address,NestedField"
     }
     /*{
@@ -319,6 +319,8 @@ export default class DynamicFilter extends LightningElement {
       return;
     }
 
+    console.log("@@ filter is " + JSON.stringify(this._filters));
+
     try {
       let showWhere = false;
       let soqlWhere = "";
@@ -386,7 +388,8 @@ export default class DynamicFilter extends LightningElement {
   formatClause(field, operator, value, type) {
     let clause = `  `;
     if (type === "text") {
-      if (operator.trim() === "LIKE" || operator.trim() === "NOT LIKE") {
+      console.log("@@ operator " + operator);
+      if (operator === "LIKE" || operator === "NOT LIKE") {
         return `'%${value}%'`;
       } else {
         return `'${value}'`;
@@ -399,6 +402,7 @@ export default class DynamicFilter extends LightningElement {
   handleMultiSelect(event) {
     if (event.detail) {
       let payload = event.detail.payload;
+      console.log("@@ payload " + JSON.stringify(payload));
       this._filters[payload.index].selectedValues = payload.values;
     }
   }
@@ -472,7 +476,7 @@ export default class DynamicFilter extends LightningElement {
         soqlWhere += `${filter.field} ${filter.operator} ''`;
       } else {
         const values = filter.selectedValues.join("', '");
-        let operator = filter.operator === " = " ? "IN" : "NOT IN";
+        let operator = filter.operator === "=" ? "IN" : "NOT IN";
         soqlWhere += `${filter.field} ${operator} ('${values}')`;
       }
     } else if (filter.fieldType === "text") {

@@ -27,8 +27,8 @@ export default class MultiSelectCombobox extends LightningElement {
       : null;
     var values = this.selectedValues
       ? JSON.parse(JSON.stringify(this.selectedValues))
-      : null;
-    if (value || values) {
+      : [];
+    if (value || values.length > 0) {
       var searchString;
       var count = 0;
       for (var i = 0; i < optionData.length; i++) {
@@ -49,6 +49,8 @@ export default class MultiSelectCombobox extends LightningElement {
     this.value = value;
     this.values = values;
     this.optionData = optionData;
+    console.log("@@ optionData " + JSON.stringify(optionData));
+    console.log("@@ values " + JSON.stringify(values));
   }
 
   filterOptions(event) {
@@ -82,31 +84,40 @@ export default class MultiSelectCombobox extends LightningElement {
 
   selectItem(event) {
     var selectedVal = event.currentTarget.dataset.id;
-    if (selectedVal) {
-      var count = 0;
-      var options = JSON.parse(JSON.stringify(this.optionData));
-      for (var i = 0; i < options.length; i++) {
-        if (options[i].value === selectedVal) {
-          if (this.multiSelect) {
-            if (this.values.includes(options[i].value)) {
-              this.values.splice(this.values.indexOf(options[i].value), 1);
+    console.log("@@ selected item " + selectedVal);
+    try {
+      if (selectedVal) {
+        var count = 0;
+        var options = JSON.parse(JSON.stringify(this.optionData));
+        for (var i = 0; i < options.length; i++) {
+          if (options[i].value === selectedVal) {
+            console.log("@@ value exist " + options[i].value);
+            if (this.multiSelect) {
+              if (this.values?.includes(options[i].value)) {
+                console.log("@@ ex " + options[i].value);
+                this.values.splice(this.values.indexOf(options[i].value), 1);
+              } else {
+                console.log("@@ push " + options[i].value);
+                this.values.push(options[i].value);
+              }
+              options[i].selected = options[i].selected ? false : true;
             } else {
-              this.values.push(options[i].value);
+              this.value = options[i].value;
+              this.searchString = options[i].label;
             }
-            options[i].selected = options[i].selected ? false : true;
-          } else {
-            this.value = options[i].value;
-            this.searchString = options[i].label;
+          }
+          if (options[i].selected) {
+            count++;
           }
         }
-        if (options[i].selected) {
-          count++;
-        }
+        this.optionData = options;
+        console.log("@@ on mouse " + JSON.stringify(this.optionData));
+        if (this.multiSelect) this.searchString = count + " Option(s) Selected";
+        if (this.multiSelect) event.preventDefault();
+        else this.showDropdown = false;
       }
-      this.optionData = options;
-      if (this.multiSelect) this.searchString = count + " Option(s) Selected";
-      if (this.multiSelect) event.preventDefault();
-      else this.showDropdown = false;
+    } catch (error) {
+      console.error(error);
     }
   }
 
@@ -165,9 +176,9 @@ export default class MultiSelectCombobox extends LightningElement {
           payload: {
             value: this.value,
             values: this.values,
-            index: this.index,
-          },
-        },
+            index: this.index
+          }
+        }
       })
     );
   }

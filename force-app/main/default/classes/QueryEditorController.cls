@@ -1,54 +1,68 @@
 public class QueryEditorController {
-        @AuraEnabled (cacheable=true)//Method to get the List of All Objects
-    public static Map<String, String> getAllObject(){
+    @AuraEnabled (cacheable=true)//Method to get the List of All Objects
+    public static Map<String, String> getAllObject(String profileName){
+        set<String> uniqueObjects = new Set<String>();
+        Integer totalObjectCount = 0;
+        Integer currentObjectCount = 0;
         
-        Map<String,String> returnObjectMap = new Map<String,String>();
+        system.debug('ProfileName'+profileName);
+        for(Query_Builder_Detail__c queryDetails :[SELECT Id,Object_Name__c FROM Query_Builder_Detail__c WHERE Active__c = TRUE AND Profile_Name__c = :profileName]){
+            uniqueObjects.add(queryDetails.Object_Name__c);
+        }
         
-        //Schema.getGlobalDescribe() => return a Map of type Map<String, Schema.SObjectType>
-        Map<String, Schema.SObjectType> objectMap = Schema.getGlobalDescribe();
         
-        //get List of all sObject
-        List<Schema.SObjectType> objectMapValues = objectMap.Values();
-        System.debug('All Objects '+ objectMapValues);
-        
-        //prepare a Map to send Data from Server to Client Side
-        
-        for(Schema.SObjectType objType : objectMapValues){
-            String name = objType.getDescribe().getName();
-            if (objType.getDescribe().isCustom() && !name.containsignorecase('history') && !name.containsignorecase('tag') && !name.containsignorecase('share') && !name.containsignorecase('feed')) {
-                    String key = objType.getDescribe().getName();
+        if(uniqueObjects.size() > 0 ) {
+            totalObjectCount = uniqueObjects.size();
+            Map<String,String> returnObjectMap = new Map<String,String>();
+            
+            //Schema.getGlobalDescribe() => return a Map of type Map<String, Schema.SObjectType>
+            Map<String, Schema.SObjectType> objectMap = Schema.getGlobalDescribe();
+            
+            //get List of all sObject
+            List<Schema.SObjectType> objectMapValues = objectMap.Values();
+            System.debug('All Objects '+ objectMap);
+            
+            //prepare a Map to send Data from Server to Client Side
+            
+            for(Schema.SObjectType objType : objectMapValues){
+                String name = objType.getDescribe().getName();
+                if (uniqueObjects.contains(name)) {
+                    String key = name;
                     String value = objType.getDescribe().getLabel();
                     returnObjectMap.put(key,value);
+                    currentObjectCount++;
                 }
-            
-        }
-        System.debug(returnObjectMap);
-        if(returnObjectMap != null && returnObjectMap.size() > 0){
+                if(currentObjectCount == totalObjectCount) {
+                    break;
+                }
+                
+            }
+            System.debug(returnObjectMap);
             return returnObjectMap;
-        }else{
+        }
+        
+        else{
             return null;
         }
     }
     
-        @AuraEnabled (cacheable=true) //Method to get all the fields of a particular Object
-    public static List<String> getAllfields(String sObjectName){
-        List<String> allFields = new List<String>();
-        
-        Map<String, Schema.SObjectType> objectMap = Schema.getGlobalDescribe();
-        SObjectType objType = objectMap.get(sObjectName);
-        
-        // Map of fields with api name and Api name as value
-        Map<String,Schema.SObjectField> objTypeFields = objType.getDescribe().fields.getMap();
-        if(!objTypeFields.isEmpty()){
-            for (String fieldName: objTypeFields.keySet()) {
-                //getting labels of the fields
-                String fieldLabel = objTypeFields.get(fieldName).getDescribe().getLabel();
-                allFields.add(fieldLabel);
-            }
-        }
-        System.debug(allFields);
-        return allFields;
-    }
+    @AuraEnabled (cacheable=true) //Method to get all the fields of a particular Object
+    public static List<Query_Builder_Detail__c> getAllfields(String sObjectName,String profileName){
+        List<String> profileNameList = profileName.split(',');
+        return [SELECT Id, 
+                	Field_API_Name__c, 
+                	Object_Name__c, 
+                	Filter_Field__c, 
+                	Filter_Value__c, 
+                	Operator__c, 
+                	Selected_Field__c, 
+                	Value_Criteria__c
+                FROM Query_Builder_Detail__c
+               	WHERE Object_Name__c = :sObjectName AND
+                	  Profile_Name__c IN :profileNameList AND
+                	  Active__c = TRUE
+               ];
+    	}
     
     @AuraEnabled
     public static List<FieldInfoWrapper> getObjectFields(String sObjectName) {
@@ -85,14 +99,14 @@ public class QueryEditorController {
         return fieldInfoList;
     }
     
-     @AuraEnabled
+    @AuraEnabled
     public static List<Sobject> fetchData(String soqlQuery){
         List<Sobject> sobjectData = new List<Sobject>(); 
         System.debug('Test: '+ soqlQuery);
         try {
             sobjectData = Database.query(soqlQuery);
             
-
+            
         }
         catch(Exception ex) {
             throw new AuraHandledException('Unable to fetch data'+ex);
@@ -113,30 +127,61 @@ public class QueryEditorController {
             Map<String, Schema.SObjectField> mapFields = Schema.getGlobalDescribe().get(selectedObjectName).getDescribe().fields.getMap();
             Schema.DescribeFieldResult pickFieldResult = mapFields.get(selectedField).getDescribe();   
             List<Schema.PicklistEntry> picklistFields1 = pickFieldResult.getPicklistValues();
-                for( Schema.PicklistEntry pickListFields2 : picklistFields1)
-                {
-                     PicklistOption option = new PicklistOption();
-                    option.label = pickListFields2.getLabel();
-                    option.value = pickListFields2.getValue();
-                    picklistOptions.add(option);
-                }       
+            for( Schema.PicklistEntry pickListFields2 : picklistFields1)
+            {
+                PicklistOption option = new PicklistOption();
+                option.label = pickListFields2.getLabel();
+                option.value = pickListFields2.getValue();
+                picklistOptions.add(option);
+            }       
             return picklistOptions;
         } catch (Exception e) {
             throw new AuraHandledException('Unable to fetch data');
         }
     }
     
+     @AuraEnabled(cacheable = true)
+    public static Map<String,List<PicklistOption>> getPicklistValuesFromApex(string selectedObjectName, List<string> picklistFields){
+        List<PicklistOption> picklistOptions = new List<PicklistOption>();
+        try {
+            Map<String,List<PicklistOption>> picklistMap = new Map<String,List<PicklistOption>>();
+            System.debug('selectedObjectName '+selectedObjectName);
+            //System.debug('selectedField '+selectedField);
+            Map<String,String> options = new  Map<String,String>();
+            
+            for(String field : picklistFields ) {
+                Map<String, Schema.SObjectField> mapFields = Schema.getGlobalDescribe().get(selectedObjectName).getDescribe().fields.getMap();
+                Schema.DescribeFieldResult pickFieldResult = mapFields.get(field).getDescribe();   
+                List<Schema.PicklistEntry> picklistFields1 = pickFieldResult.getPicklistValues();
+                for( Schema.PicklistEntry pickListFields2 : picklistFields1)
+                {
+                    PicklistOption option = new PicklistOption();
+                    option.label = pickListFields2.getLabel();
+                    option.value = pickListFields2.getValue();
+                    picklistOptions.add(option);
+                }
+                picklistMap.put(field,picklistOptions);
+            }
+            
+            
+            return picklistMap;
+        } catch (Exception e) {
+            throw new AuraHandledException('Unable to fetch data');
+        }
+    }
+    
+    
     public class FieldInfoWrapper {
         @AuraEnabled public String name;
         @AuraEnabled public String label;
         @AuraEnabled public String dataType;
-		@AuraEnabled public List<PicklistOption> picklistOptions;        
+        @AuraEnabled public List<PicklistOption> picklistOptions;        
         // Add more properties as needed
     }
     
-     public class PicklistOption {
+    public class PicklistOption {
         @AuraEnabled public String label;
         @AuraEnabled public String value;
     }
-
+    
 }

@@ -1,20 +1,28 @@
 import { LightningElement, track, api, wire } from "lwc";
 import getAllObject from "@salesforce/apex/QueryEditorController.getAllObject";
-import getAllfields from "@salesforce/apex/QueryEditorController.getObjectFields";
+import getAllfields from "@salesforce/apex/QueryEditorController.getAllfields";
 import fetchData from "@salesforce/apex/QueryEditorController.fetchData";
+import getPicklistValuesFromApex from "@salesforce/apex/QueryEditorController.getPicklistValuesFromApex";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import { getObjectInfo } from "lightning/uiObjectInfoApi";
-import { getRecord } from 'lightning/uiRecordApi';
-import UserId from '@salesforce/user/Id';
-import State from '@salesforce/schema/User.State';
+import { getRecord } from "lightning/uiRecordApi";
+import UserId from "@salesforce/user/Id";
+import State from "@salesforce/schema/User.State";
+import Country from "@salesforce/schema/User.Country";
+import PostalCode from "@salesforce/schema/User.PostalCode";
+import ProfileName from "@salesforce/schema/User.Profile.Name";
 
-
-import { standardObjectOptions, filterWrapper } from "c/commonLibrary";
+import {
+  filterWrapper,
+  operations,
+  fieldTypeSettings,
+  booleanOptions
+} from "c/commonLibrary";
 
 export default class QueryEditor extends LightningElement {
   selectedObject = "";
   @track objectData = [];
-  @track objectList = standardObjectOptions;
+  @track objectList = [];
   @track fieldList = [];
   @track fieldOptions = [];
   @track selectedFields = [];
@@ -29,6 +37,10 @@ export default class QueryEditor extends LightningElement {
   orderByDirection = "";
   isLoading = false;
   @track selectedRows = [];
+  userProfileName;
+  billingCountry;
+  billingPostalCode;
+  billingStateCode;
 
   orderByDirections = [
     { label: "ASC", value: "ASC" },
@@ -56,28 +68,41 @@ export default class QueryEditor extends LightningElement {
       : "slds-col slds-size--8-of-12 slds-p-left--small slds-p-top_medium slds-border_top slds-border_right slds-border_bottom slds-border_left";
   }
   billingState;
-  @wire(getRecord, { recordId: UserId, fields: [State] })
+  @wire(getRecord, {
+    recordId: UserId,
+    fields: [State, ProfileName, Country, PostalCode]
+  })
   userDetails({ error, data }) {
-      if (error) {
-          console.error('Error in fetching State of User:'+JSON.stringify(error));
-      } else if (data) {
-        console.log('fetching State of User:'+JSON.stringify(data));
-        
-          if (data.fields.State.value != null) {
+    if (error) {
+      console.error("Error in fetching State of User:" + JSON.stringify(error));
+    } else if (data) {
+      console.log("fetching State of User:" + JSON.stringify(data));
 
-              this.billingState = data.fields.State.value;
-
-            
-          }
+      if (data.fields.State.value != null) {
+        this.billingState = data.fields.State.value;
       }
-      console.log('billingState>>'+JSON.stringify(this.billingState))
+
+      if (data.fields.Country.value != null) {
+        this.billingCountry = data.fields.Country.value;
+      }
+
+      if (data.fields.Country.value != null) {
+        this.billingPostalCode = data.fields.PostalCode.value;
+      }
+
+      if (data.fields.Profile.value != null) {
+        this.userProfileName = data.fields.Profile.value.fields.Name.value;
+      }
+    }
   }
 
-  @wire(getAllObject)
+  @wire(getAllObject, { profileName: "$userProfileName" })
   objectDetails({ data, error }) {
     if (data) {
       this.objectData = data;
-      this.selectedFields.push(...['Id','BillingCity','BillingState','Phone']);
+      /*this.selectedFields.push(
+        ...["Id", "BillingCity", "BillingState", "Phone"]
+      );*/
       for (var key in data) {
         this.objectList.push({ label: data[key], value: key });
       }
@@ -95,97 +120,180 @@ export default class QueryEditor extends LightningElement {
       //this.template.querySelector("c-dynamic-filter").resetAll();
       this.isLoading = true;
       this.objectInfo = data;
-   
-      //this.filters = filterWrapper;
-      console.log("@@ in wire " + JSON.stringify(this.filters));
 
-      const allowedDataTypes = new Set([
-        "String",
-        "Picklist",
-        "Url",
-        "Email",
-        "Reference",
-        "Phone",
-        "Date",
-        "DateTime",
-        "Currency",
-        "Double",
-        "Boolean",
-        "Int",
-        "Address"
-      ]);
+      getAllfields({
+        sObjectName: this.selectedObject,
+        profileName: this.userProfileName
+      })
+        .then((result) => {
+          let sequence = 1;
+          let filterArray = [];
 
-      const fields = Object.values(data.fields);
+          var filterWrapper = [];
+          var picklistFields = [];
 
-      let fieldDetails = [];
-      let fieldOptionsList = [];
+          const allowedDataTypes = new Set([
+            "String",
+            "Picklist",
+            "Url",
+            "Email",
+            "Reference",
+            "Phone",
+            "Date",
+            "DateTime",
+            "Currency",
+            "Double",
+            "Boolean",
+            "Int",
+            "Address"
+          ]);
 
-      for (const field of fields) {
-        if (allowedDataTypes.has(field.dataType)) {
-          const fieldOption = {
-            label: field.label,
-            value: field.apiName,
-            dataType: field.dataType
-          };
-          fieldOptionsList.push(fieldOption);
-        }
-        if (field.apiName !== "Id" && field.apiName !== "Name") {
-          const fieldDetail = {
-            label: field.label,
-            value: field.apiName,
-            dataType: field.dataType,
-            selected: false
-          };
-          fieldDetails.push(fieldDetail);
-        }
-      }
+          const fields = Object.values(data.fields);
 
-      fieldDetails.sort((a, b) => a.label.localeCompare(b.label));
-      fieldOptionsList.sort((a, b) => a.label.localeCompare(b.label));
+          let fieldDetails = [];
+          let fieldOptionsList = [];
 
-      this.fieldDetails = fieldDetails;
-      this.fieldOptions = fieldOptionsList;
+          const fieldAPINames = new Set(
+            result.map((obj) => obj.Field_API_Name__c)
+          );
 
-      this.isLoading = false;
+          var filteredFields = fields.filter((obj) =>
+            fieldAPINames.has(obj.apiName)
+          );
 
-      /*this.isLoading = true;
-      this.objectInfo = data;
-      const allowedDataTypes = [
-        "String",
-        "Picklist",
-        "Url",
-        "Email",
-        "Reference",
-        "Phone",
-        "Date",
-        "DateTime",
-        "Currency",
-        "Double",
-        "Boolean",
-        "Int",
-        "Address"
-      ];
+          this.selectedFields = result
+            .filter((obj) => obj.Selected_Field__c === true)
+            .map((obj) => obj.Field_API_Name__c);
 
-      this.fieldDetails = Object.values(data.fields)
-        .filter((field) => field.apiName !== "Id")
-        .map((field) => ({
-          label: `${field.label}`,
-          value: field.apiName,
-          dataType: field.dataType,
-          selected: false
-        }));
+          // 2. Add properties from array1 to filteredArray
+          filteredFields = filteredFields.map((element) => {
+            const matchingItem = result.find(
+              (item) => item.Field_API_Name__c === element.apiName
+            );
+            return {
+              ...element,
+              ...matchingItem
+            };
+          });
 
-      this.fieldDetails = this.sortData(this.fieldDetails);
+          for (const field of filteredFields) {
+            if (allowedDataTypes.has(field.dataType)) {
+              const fieldOption = {
+                label: field.label,
+                value: field.apiName,
+                dataType: field.dataType
+              };
+              fieldOptionsList.push(fieldOption);
+            }
+            if (field.apiName !== "Id" && field.apiName !== "Name") {
+              const fieldDetail = {
+                label: field.label,
+                value: field.apiName,
+                dataType: field.dataType,
+                selected: false
+              };
+              fieldDetails.push(fieldDetail);
+            }
 
-      this.fieldOptions = Object.values(data.fields)
-        .filter((field) => allowedDataTypes.includes(field.dataType))
-        .map((field) => ({
-          label: `${field.label}`,
-          value: field.apiName
-        }));
+            if (field.Filter_Field__c) {
+              const filter = {};
+              filter.sequence = sequence;
+              filter.field = field.apiName;
+              filter.operator = field.Operator__c;
+              filter.value = field?.Filter_Value__c;
+              filter.fieldType = fieldTypeSettings[field.dataType].inputType;
+              filter.showPicklistInput =
+                fieldTypeSettings[field.dataType]?.hasOwnProperty(
+                  "showPicklistInput"
+                ) || false;
 
-      this.fieldOptions = this.sortData(this.fieldOptions);
-      this.isLoading = false;*/
+              if (filter.showPicklistInput) {
+                picklistFields.push(field.apiName);
+              }
+
+              filter.showBooleanInput =
+                fieldTypeSettings[field.dataType]?.hasOwnProperty(
+                  "showBooleanInput"
+                ) || false;
+
+              filter.booleanOptions = filter.showBooleanInput
+                ? booleanOptions
+                : [];
+
+              filter.options = [];
+              filter.selectedValues = [];
+              filter.operatorOptions = operations.filter((operation) =>
+                operation.types.includes(field.dataType)
+              );
+
+              filter.isType = fieldTypeSettings[field.dataType].isType;
+              filter.formatter = "";
+              filter.operatorDisabled = false;
+              filter.valueDisabled = false;
+
+              // map filter values based on criteria
+              if (
+                field.Value_Criteria__c &&
+                field.Value_Criteria__c === "Fetch User State"
+              ) {
+                filter.value = this.billingState;
+              } else if (
+                field.Value_Criteria__c &&
+                field.Value_Criteria__c === "Fetch User Country"
+              ) {
+                filter.value = this.billingCountry;
+              } else if (
+                field.Value_Criteria__c &&
+                field.Value_Criteria__c === "Fetch User Postal Code"
+              ) {
+                filter.value = this.billingPostalCode;
+              }
+
+              filterWrapper.push(filter);
+              sequence++;
+            }
+          }
+
+          fieldDetails.sort((a, b) => a.label.localeCompare(b.label));
+          fieldOptionsList.sort((a, b) => a.label.localeCompare(b.label));
+
+          this.fieldDetails = fieldDetails;
+          this.fieldOptions = fieldOptionsList;
+
+          if (picklistFields.length > 0) {
+            getPicklistValuesFromApex({
+              selectedObjectName: this.selectedObject,
+              picklistFields: picklistFields
+            })
+              .then((result) => {
+                console.log("Result", JSON.stringify(result));
+                const entries = Object.entries(result);
+                const lookup = Object.fromEntries(entries);
+
+                // Iterate over the array and assign the list to the options property
+                // where the apiName matches the key in the lookup object
+                filterWrapper.forEach((obj) => {
+                  if (lookup[obj.field]) {
+                    obj.options = lookup[obj.field];
+                    obj.selectedValues = obj?.value?.split(",");
+                  }
+                });
+
+                console.log("@@ fil " + JSON.stringify(filterWrapper));
+                this.filters = filterWrapper;
+              })
+              .catch((error) => {
+                console.error("Error:", error);
+              });
+          } else {
+            this.filters = filterWrapper;
+          }
+
+          this.isLoading = false;
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+        });
     }
   }
 
@@ -238,7 +346,7 @@ export default class QueryEditor extends LightningElement {
     this.selectedObject = event.detail.value;
     this.filters = [];
     this.queryData = [];
-    const filterWrapperAccount = [
+    /*const filterWrapperAccount = [
       {
         sequence: 1,
         field: "BillingState",
@@ -258,7 +366,7 @@ export default class QueryEditor extends LightningElement {
         valueDisabled: true
       }
     ];
-    this.filters = filterWrapperAccount;
+    this.filters = filterWrapperAccount;*/
   }
 
   handleFieldChange(event) {
